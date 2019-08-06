@@ -17,7 +17,7 @@ static volatile bool keepRunning = 1;
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <cairo.h>
-#include <cairo-ft.h>
+//#include <cairo-ft.h>
 
 
 
@@ -33,8 +33,9 @@ static volatile bool keepRunning = 1;
 int key_fd;
 pthread_t key_p;
 
-int enc_fd[3];
-pthread_t enc_p[3];
+const unsigned num_enc = 4;
+int enc_fd[num_enc];
+pthread_t enc_p[num_enc];
 
 void *key_check(void *);
 void *enc_check(void *);
@@ -72,13 +73,14 @@ void gpio_init() {
         }
     }
 
-    char *enc_filenames[3] = {"/dev/input/by-path/platform-soc:knob1-event",
+    char *enc_filenames[num_enc] = {"/dev/input/by-path/platform-soc:knob1-event",
                               "/dev/input/by-path/platform-soc:knob2-event",
-                              "/dev/input/by-path/platform-soc:knob3-event"};
-    for(int i=0; i < 3; i++) {
+                              "/dev/input/by-path/platform-soc:knob3-event",
+                              "/dev/input/by-path/platform-soc:knob4-event"};
+    for(int i=0; i < num_enc; i++) {
         enc_fd[i] = open_and_grab(enc_filenames[i], O_RDONLY);
         if(enc_fd[i] > 0) {
-            int *arg = malloc(sizeof(int));
+            int *arg = static_cast<int*>(malloc(sizeof(int)));
             *arg = i;
             if(pthread_create(&enc_p[i], NULL, enc_check, arg) ) {
                 fprintf(stderr, "ERROR (enc%d) pthread error\n",i);
@@ -89,9 +91,9 @@ void gpio_init() {
 
 void gpio_deinit() {
     pthread_cancel(key_p);
-    pthread_cancel(enc_p[0]);
-    pthread_cancel(enc_p[1]);
-    pthread_cancel(enc_p[2]);
+    for(unsigned i=0;i<num_enc;i++) {
+    	pthread_cancel(enc_p[i]);
+    }
 }
 
 void *enc_check(void *x) {
@@ -100,11 +102,11 @@ void *enc_check(void *x) {
     int rd;
     unsigned int i;
     struct input_event event[64];
-    int dir[3] = {1,1,1};
+    int dir[num_enc] = {1,1,1};
     clock_t now[3];
     clock_t prev[3];
     clock_t diff;
-    prev[0] = prev[1] = prev[2] = clock();
+    prev[0] = prev[1] = prev[2] =  clock();
 
     while(1) {
         rd = read(enc_fd[n], event, sizeof(struct input_event) * 64);
@@ -166,7 +168,7 @@ static cairo_surface_t *surfacefb;
 static cairo_surface_t *image;
 
 
-#define FB_DEVICE "/dev/fb0"
+#define FB_DEVICE "/dev/fb1"
 
 static cairo_t *cr;
 //static cairo_font_face_t *ct[NUM_FONTS];
@@ -175,11 +177,13 @@ static cairo_t *cr;
 //static FT_Face face[NUM_FONTS];
 static double text_xy[2];
 
-#define SCREEN_FB_FMT   CAIRO_FORMAT_ARGB32
-#define SCREEN_FMT      CAIRO_FORMAT_ARGB32
-#define SCREEN_X 1024
-#define SCREEN_Y 600
-#define SCREEN_SCALE 8
+//#ifdef PUSH2
+//#define SCREEN_FB_FMT   CAIRO_FORMAT_ARGB32
+//#define SCREEN_FMT      CAIRO_FORMAT_ARGB32
+//#define SCREEN_X 1024
+//#define SCREEN_Y 600
+//#define SCREEN_SCALE 8
+//#endif // push2
 
 
 #ifndef SCREEN_FB_FMT
@@ -288,6 +292,7 @@ cairo_surface_t *cairo_linuxfb_surface_create()
     return surface;
 
 handle_ioctl_error:
+    fprintf(stderr, "ERROR unable to open screen");
     close(device->fb_fd);
     handle_allocate_error:
     free(device);
@@ -313,25 +318,45 @@ int main(int argc, const char * argv[]) {
     std::cout << "init gpio" << std::endl;
     gpio_init();
     std::cout << "init screen" << std::endl;
-    cairo_surface_t *surface = cairo_linuxfb_surface_create();
-    cairo_t *cr = cairo_create(surface);
-    signal(SIGINT, intHandler);
+    cairo_surface_t *surfacefb = cairo_linuxfb_surface_create();
+    cairo_t *crfb = cairo_create(surfacefb);
+
+    cairo_surface_t* surface = cairo_image_surface_create(SCREEN_FMT,SCREEN_X,SCREEN_Y);
+    cairo_t*	cr = cairo_create(surface);
+
+    cairo_set_operator(crfb, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_surface(crfb,surface,0,0);
+
+
+    cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+    cairo_paint(cr);
+    cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    cairo_paint(crfb);
+
+    //cairo_font_options_t *font_options = cairo_font_options_create();
+    //cairo_font_options_set_antialias(font_options,CAIRO_ANTIALIAS_SUBPIXEL);
+    //cairo_set_font_options(cr, font_options);
+    //cairo_font_options_destroy(font_options);
+
+
     device.start();
+    signal(SIGINT, intHandler);
 
-
+    assert(cr!=nullptr);
     cairo_select_font_face(cr, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-    cairo_set_font_size(cr, 16.0);
-    cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);
+    cairo_set_font_size(cr, 8.0);
 
-
-    cairo_set_source_rgb(cr, 0, 0, 0); //!!
-    cairo_rectangle(cr,20, 10, 10,24);
-    cairo_fill(cr);
+    //cairo_set_source_rgb(cr, 0.4,0.4,0.4);
+    //cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+    //cairo_rectangle(cr,0,0, 128, 64);
+    //cairo_fill(cr);
 
     cairo_set_source_rgb(cr, 1, 1,1 ); //!!
-    cairo_move_to(cr, 20, 10);
-    cairo_show_text(cr, "Hello");
+    cairo_move_to(cr,32, 32);
+    cairo_show_text(cr, "Hello, World");
+    cairo_fill(cr);
 
+    cairo_paint(crfb);
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {
@@ -344,7 +369,10 @@ int main(int argc, const char * argv[]) {
     std::cout << "deinit gpio" << std::endl;
     gpio_deinit();
     std::cout << "deinit screen" << std::endl;
-    cairo_linuxfb_surface_destroy(surface);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    cairo_destroy(crfb);
+    cairo_linuxfb_surface_destroy(surfacefb);
     std::cout << "test done" << std::endl;
     return 0;
 }
