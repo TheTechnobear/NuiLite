@@ -194,8 +194,8 @@ void FatesLib::initDisplay() {
     surfacefb_ = cairo_linuxfb_surface_create();
     crfb_ = cairo_create(surfacefb_);
 
-    cairo_surface_t* surface_ = cairo_image_surface_create(SCREEN_FMT,SCREEN_X,SCREEN_Y);
-    cairo_t*	cr_ = cairo_create(surface_);
+    surface_ = cairo_image_surface_create(SCREEN_FMT,SCREEN_X,SCREEN_Y);
+    cr_ = cairo_create(surface_);
 
     cairo_set_operator(crfb_, CAIRO_OPERATOR_SOURCE);
     cairo_set_source_surface(crfb_,surface_,0,0);
@@ -236,6 +236,7 @@ void FatesLib::displayLine(int x , int y , const std::string& str)  {
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
 }
+
 
 
 /////////
