@@ -11,10 +11,12 @@ include_directories(
 
 set(FL_H
         FatesLite.h
+        FatesLib.h
         )
 
 set(FL_SRC
         FatesLite.cpp
+        FatesLib.cpp
         )
 
 
