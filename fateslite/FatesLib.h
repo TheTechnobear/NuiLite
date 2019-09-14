@@ -16,9 +16,8 @@ public:
 public:
     // await refactor etc
     static constexpr unsigned num_enc = 4;
-    static int key_fd;
-    static int enc_fd[num_enc];
-
+    int key_fd;
+    int enc_fd[num_enc];
 
 private:
     pthread_t key_p;

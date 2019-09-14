@@ -86,10 +86,18 @@ static int opengpio (const char *pathname, int flags) {
     return fd;
 }
 
+struct EncArg {
+    EncArg(FatesLib* pThis,unsigned enc) : pThis_(pThis),enc_(enc) { ; }
+    FatesLib* pThis_;
+    unsigned enc_;
+};
 
 void *encProcess(void *x) {
-    int n = *((int *)x);
-    free(x);
+    auto pEncArg= static_cast<EncArg*>(x);
+    auto pThis=pEncArg->pThis_;
+    int n = pEncArg->enc_;
+    delete pEncArg;
+
     int rd;
     unsigned int i;
     struct input_event event[64];
@@ -100,7 +108,7 @@ void *encProcess(void *x) {
     prev[0] = prev[1] = prev[2] =  clock();
 
     while(1) {
-        rd = read(FatesLib::enc_fd[n], event, sizeof(struct input_event) * 64);
+        rd = read(pThis->enc_fd[n], event, sizeof(struct input_event) * 64);
         if(rd < (int) sizeof(struct input_event)) {
             fprintf(stderr, "ERROR (enc) read error\n");
         }
@@ -122,13 +130,13 @@ void *encProcess(void *x) {
 }
 
 void *keyProcess(void *x) {
-    (void)x;
+    auto pThis= static_cast<FatesLib*>(x);
     int rd;
     unsigned int i;
     struct input_event event[64];
 
     while(1) {
-        rd = read(FatesLib::key_fd, event, sizeof(struct input_event) * 64);
+        rd = read(pThis->key_fd, event, sizeof(struct input_event) * 64);
         if(rd < (int) sizeof(struct input_event)) {
             fprintf(stderr, "ERROR (key) read error\n");
         }
@@ -146,7 +154,7 @@ void *keyProcess(void *x) {
 void FatesLib::initGPIO() {
     key_fd = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY); // Keys
     if(key_fd > 0) {
-        if(pthread_create(&key_p, NULL, keyProcess, 0) ) {
+        if(pthread_create(&key_p, NULL, keyProcess, this) ) {
             fprintf(stderr, "ERROR (keys) pthread error\n");
         }
     }
@@ -158,9 +166,8 @@ void FatesLib::initGPIO() {
     for(int i=0; i < num_enc; i++) {
         enc_fd[i] = opengpio(enc_filenames[i], O_RDONLY);
         if(enc_fd[i] > 0) {
-            int *arg = static_cast<int*>(malloc(sizeof(int)));
-            *arg = i;
-            if(pthread_create(&enc_p[i], NULL, encProcess, arg) ) {
+            EncArg* pEncArg=new EncArg(this,i);
+            if(pthread_create(&enc_p[i], NULL, encProcess, pEncArg) ) {
                 fprintf(stderr, "ERROR (enc%d) pthread error\n",i);
             }
         }
