@@ -168,7 +168,8 @@ static cairo_surface_t *surfacefb;
 static cairo_surface_t *image;
 
 
-#define FB_DEVICE "/dev/fb1"
+#define FB_DEVICE "/dev/fb0"
+//#define FB_DEVICE "/dev/fb1"
 
 static cairo_t *cr;
 //static cairo_font_face_t *ct[NUM_FONTS];
