@@ -23,7 +23,7 @@
 #include <pthread.h>
 #include <linux/input.h>
 #include <time.h>
-#include <sys/select.h>
+#include <sys/poll.h>
 
 
 #define FB_DEVICE "/dev/fb0"
@@ -47,8 +47,6 @@
 #ifndef SCREEN_SCALE
 #define SCREEN_SCALE 1.0
 #endif
-
-
 
 
 namespace FatesLite {
@@ -79,7 +77,6 @@ private:
     void deinitDisplay();
 
     void displayPaint();
-
 
 
     std::thread gpioThread_;
@@ -149,13 +146,13 @@ void FatesDeviceImpl_::addCallback(std::shared_ptr<FatesCallback> cb) {
 }
 
 void FatesDeviceImpl_::start() {
-    keepRunning_=true;
+    keepRunning_ = true;
     initGPIO();
     initDisplay();
 }
 
 void FatesDeviceImpl_::stop() {
-    keepRunning_=false;
+    keepRunning_ = false;
 
     deinitDisplay();
     deinitGPIO();
@@ -234,92 +231,81 @@ unsigned FatesDeviceImpl_::process() {
 //    }
 //}
 
-void* process_gpio_func(void *x) {
-    auto pThis= static_cast<FatesDeviceImpl_*>(x);
+void *process_gpio_func(void *x) {
+    auto pThis = static_cast<FatesDeviceImpl_ *>(x);
     pThis->processGPIO();
     return nullptr;
 }
 
-#include <sys/poll.h>
+
 void FatesDeviceImpl_::processGPIO() {
 
-    int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1,1,1};
+    int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1, 1, 1};
     clock_t encnow[NUM_ENCODERS];
     clock_t encprev[NUM_ENCODERS];
-    encprev[0] = encprev[1] = encprev[2] = encprev[3] =clock();
-    struct input_event event[64];
+    encprev[0] = encprev[1] = encprev[2] = encprev[3] = clock();
+    struct input_event event;
 
     while (keepRunning_) {
 
-	struct pollfd fds[1+NUM_ENCODERS];
-	
-	//FIXME only works if order of fd doesnt change
-	// i.e key/enc 1 to 3 must open
-        unsigned fdcount=0;
-	if(keyFd_>0) {
-	    fds[fdcount].fd=keyFd_;
-	    fds[fdcount].events = POLLIN;
-	}
-        for(auto i=0;i<NUM_ENCODERS;i++) {
-            if(encFd_[i]>0) { 
-		    fds[fdcount].fd=encFd_[i];
-		    fds[fdcount].events = POLLIN;
-		    fdcount++;
-	    } else {
-	 	fprintf(stderr,"enc %d not opended", i);
-	    }
+        struct pollfd fds[1 + NUM_ENCODERS];
+
+        //FIXME only works if order of fd doesnt change
+        // i.e key/enc 1 to 3 must open
+        unsigned fdcount = 0;
+        if (keyFd_ > 0) {
+            fds[fdcount].fd = keyFd_;
+            fds[fdcount].events = POLLIN;
         }
-
-	auto result = poll(fds,fdcount,5000);
-	fprintf(stderr,"poll %d %d\n", result, fdcount);
-	for(auto c=0;c<fdcount;c++) {
-	   fprintf(stderr,"   %d %d %d\n", fds[c].fd, fds[c].revents, fds[c].revents&POLLIN);
-	}
-
-        if(result>0) {
-            if ( fds[0].revents & POLLIN)  {
-
-                auto rd = read(keyFd_, event, sizeof(struct input_event));
-                //auto rd = read(keyFd_, event, sizeof(struct input_event) * 64);
-                if(rd < (int) sizeof(struct input_event)) {
-                    fprintf(stderr, "ERROR (key) read error\n");
-                }
-                else {
-                    { unsigned i=0;
-                    //for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
-                        if (event[i].type) { // make sure it's not EV_SYN == 0
-                            fprintf(stderr, "button %d = %d\n", event[i].code, event[i].value);
-                        }
-                    }
-                }
+        for (auto i = 0; i < NUM_ENCODERS; i++) {
+            if (encFd_[i] > 0) {
+                fds[fdcount].fd = encFd_[i];
+                fds[fdcount].events = POLLIN;
+                fdcount++;
+            } else {
+                fprintf(stderr, "enc %d not opended", i);
             }
         }
 
-        for (auto n=0;n<NUM_ENCODERS;n++) {
-            	if ( fds[n+1].revents & POLLIN)  {
+        auto result = poll(fds, fdcount, 5000);
+        fprintf(stderr, "poll %d %d\n", result, fdcount);
+        for (auto c = 0; c < fdcount; c++) {
+            fprintf(stderr, "   %d %d %d\n", fds[c].fd, fds[c].revents, fds[c].revents & POLLIN);
+        }
 
+        if (result > 0) {
+            if (fds[0].revents & POLLIN) {
+                auto rd = read(keyFd_, event, sizeof(struct input_event));
+                if (rd < (int) sizeof(struct input_event)) {
+                    fprintf(stderr, "ERROR (key) read error\n");
+                } else {
+                    if (event.type) { // make sure it's not EV_SYN == 0
+                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
+                    }
+                }
+            }
+
+            for (auto n = 0; n < NUM_ENCODERS; n++) {
+                if (fds[n + 1].revents & POLLIN) {
                     auto rd = read(encFd_[n], event, sizeof(struct input_event));
-                    //auto rd = read(encFd_[n], event, sizeof(struct input_event) * 64);
                     if (rd < (int) sizeof(struct input_event)) {
                         fprintf(stderr, "ERROR (enc) read error\n");
                     }
 
                     auto now = clock();
-                    //for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
-                    { unsigned i=0;
-                        if (event[i].type) { // make sure it's not EV_SYN == 0
-                            auto diff = now - encprev[n];
-                            fprintf(stderr, "encoder %d\t%d\t%lu\n", n, event[i].value, diff);
-                            encprev[n] = now;
-                            if (diff > 100) { // filter out glitches
-                                if (encdir[n] != event[i].value && diff > 500) { // only reverse direction if there is reasonable settling time
-                                    encdir[n] = event[i].value;
-                                }
+                    if (event.type) { // make sure it's not EV_SYN == 0
+                        auto diff = now - encprev[n];
+                        fprintf(stderr, "encoder %d\t%d\t%lu\n", n, event.value, diff);
+                        encprev[n] = now;
+                        if (diff > 100) { // filter out glitches
+                            if (encdir[n] != event.value && diff > 500) { // only reverse direction if there is reasonable settling time
+                                encdir[n] = event.value;
                             }
                         }
                     }
                 }
             }
+        }
 
     }
 }
@@ -328,14 +314,13 @@ void FatesDeviceImpl_::processGPIO() {
 void FatesDeviceImpl_::initGPIO() {
 
     const char *enc_filenames[NUM_ENCODERS] = {"/dev/input/by-path/platform-soc:knob1-event",
-                                    "/dev/input/by-path/platform-soc:knob2-event",
-                                    "/dev/input/by-path/platform-soc:knob3-event",
-                                    "/dev/input/by-path/platform-soc:knob4-event"};
-    for(auto i=0; i < NUM_ENCODERS; i++) {
+                                               "/dev/input/by-path/platform-soc:knob2-event",
+                                               "/dev/input/by-path/platform-soc:knob3-event",
+                                               "/dev/input/by-path/platform-soc:knob4-event"};
+    for (auto i = 0; i < NUM_ENCODERS; i++) {
         encFd_[i] = opengpio(enc_filenames[i], O_RDONLY);
-	//encFd_[i]=0;
-        if(encFd_[i] > 0) {
-		fprintf(stderr, "success open enc %d, %d\n", i,encFd_[i]);
+        if (encFd_[i] > 0) {
+            fprintf(stderr, "success open enc %d, %d\n", i, encFd_[i]);
 //            EncArg* pEncArg=new EncArg(this,i);
 //            if(pthread_create(&enc_p[i], NULL, encProcess, pEncArg) ) {
 //                fprintf(stderr, "ERROR (enc%d) pthread error\n",i);
@@ -344,7 +329,7 @@ void FatesDeviceImpl_::initGPIO() {
     }
 
     keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY); // Keys
-    if(keyFd_ > 0) {
+    if (keyFd_ > 0) {
 //        if(pthread_create(&key_p, NULL, keyProcess, this) ) {
 //            fprintf(stderr, "ERROR (keys) pthread error\n");
 //        }
@@ -369,11 +354,11 @@ void FatesDeviceImpl_::initDisplay() {
     surfacefb_ = cairo_linuxfb_surface_create();
     crfb_ = cairo_create(surfacefb_);
 
-    surface_ = cairo_image_surface_create(SCREEN_FMT,SCREEN_X,SCREEN_Y);
+    surface_ = cairo_image_surface_create(SCREEN_FMT, SCREEN_X, SCREEN_Y);
     cr_ = cairo_create(surface_);
 
     cairo_set_operator(crfb_, CAIRO_OPERATOR_SOURCE);
-    cairo_set_source_surface(crfb_,surface_,0,0);
+    cairo_set_source_surface(crfb_, surface_, 0, 0);
 
     // clear display
     cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
@@ -388,7 +373,7 @@ void FatesDeviceImpl_::initDisplay() {
     cairo_select_font_face(cr_, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size(cr_, 8.0);
 
-    cairo_set_source_rgb(cr_, 1, 1,1 ); //!!
+    cairo_set_source_rgb(cr_, 1, 1, 1); //!!
 
 }
 
@@ -405,9 +390,9 @@ void FatesDeviceImpl_::displayPaint() {
 
 }
 
-void FatesDeviceImpl_::displayLine(int x , int y , const std::string& str)  {
-    cairo_set_source_rgb(cr_, 1, 1,1 ); //!!
-    cairo_move_to(cr_,x, y);
+void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
+    cairo_set_source_rgb(cr_, 1, 1, 1); //!!
+    cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
 }
@@ -416,14 +401,14 @@ void FatesDeviceImpl_::displayLine(int x , int y , const std::string& str)  {
 
 ///////// helper functions
 
-int opengpio (const char *pathname, int flags) {
+int opengpio(const char *pathname, int flags) {
     int fd;
-    int open_attempts=0, ioctl_attempts=0;
+    int open_attempts = 0, ioctl_attempts = 0;
     while (open_attempts < 200) {
         fd = open(pathname, flags);
-        if(fd > 0) {
-            if(ioctl(fd, EVIOCGRAB, 1) == 0) {
-                ioctl(fd, EVIOCGRAB, (void*)0);
+        if (fd > 0) {
+            if (ioctl(fd, EVIOCGRAB, 1) == 0) {
+                ioctl(fd, EVIOCGRAB, (void *) 0);
                 goto done;
             }
             ioctl_attempts++;
@@ -433,7 +418,7 @@ int opengpio (const char *pathname, int flags) {
         usleep(50000); // 50ms sleep * 200 = 10s fail after 10s
     };
     done:
-    if(open_attempts > 0) {
+    if (open_attempts > 0) {
         fprintf(stderr, "WARN opengpio GPIO '%s' required %d open attempts & %d ioctl attempts\n", pathname, open_attempts, ioctl_attempts);
     }
     return fd;
@@ -448,9 +433,8 @@ typedef struct _cairo_linuxfb_device {
 } cairo_linuxfb_device_t;
 
 /* Destroy a cairo surface */
-void cairo_linuxfb_surface_destroy(void *device)
-{
-    cairo_linuxfb_device_t *dev = (cairo_linuxfb_device_t *)device;
+void cairo_linuxfb_surface_destroy(void *device) {
+    cairo_linuxfb_device_t *dev = (cairo_linuxfb_device_t *) device;
 
     if (dev == NULL) {
         return;
@@ -462,14 +446,13 @@ void cairo_linuxfb_surface_destroy(void *device)
 }
 
 /* Create a cairo surface using the specified framebuffer */
-cairo_surface_t *cairo_linuxfb_surface_create()
-{
+cairo_surface_t *cairo_linuxfb_surface_create() {
     cairo_linuxfb_device_t *device;
     cairo_surface_t *surface;
 
-    const char* fb_name = FB_DEVICE;
+    const char *fb_name = FB_DEVICE;
 
-    device = static_cast<cairo_linuxfb_device_t*>( malloc( sizeof(*device) ));
+    device = static_cast<cairo_linuxfb_device_t *>( malloc(sizeof(*device)));
     if (!device) {
         fprintf(stderr, "ERROR (screen) cannot allocate memory\n");
         return NULL;
@@ -493,11 +476,11 @@ cairo_surface_t *cairo_linuxfb_surface_create()
                             * device->fb_vinfo.bits_per_pixel / 8;
 
     // Map the device to memory
-    device->fb_data = (unsigned char *)mmap(0, device->fb_screensize,
-                                            PROT_READ | PROT_WRITE, MAP_SHARED,
-                                            device->fb_fd, 0);
+    device->fb_data = (unsigned char *) mmap(0, device->fb_screensize,
+                                             PROT_READ | PROT_WRITE, MAP_SHARED,
+                                             device->fb_fd, 0);
 
-    if ( device->fb_data == (unsigned char *)-1 ) {
+    if (device->fb_data == (unsigned char *) -1) {
         fprintf(stderr, "ERROR (screen) failed to map framebuffer device to memory");
         goto handle_ioctl_error;
     }
@@ -531,8 +514,6 @@ cairo_surface_t *cairo_linuxfb_surface_create()
     free(device);
     return NULL;
 }
-
-
 
 
 }// namespace
