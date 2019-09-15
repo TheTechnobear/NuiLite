@@ -21,14 +21,21 @@ void intHandler(int dummy) {
 
 char buf[100];
 
+int lastButton=0,lastButtonState=0;
+int lastEncoder=0,lastEncoderState=0;
+
 class TestCallback : public FatesLite::FatesCallback {
 public:
     virtual void onButton(unsigned id, unsigned value)  {
-        sprintf(buf,"button %d : %d", id, value);
+        lastButton = id;
+        lastButtonState = value;
+        fprintf(stderr,"button %d : %d\n", id, value);
     }
 
     virtual void onEncoder(unsigned id, int value)  {
-        sprintf(buf,"encoder %d : %d", id, value);
+        lastEncoder = id;
+        lastEncoderState = value;
+        fprintf(stderr,"encoder %d : %d\n", id, value);
     }
 };
 
@@ -40,14 +47,21 @@ int main(int argc, const char * argv[]) {
 
     signal(SIGINT, intHandler);
 
-    sprintf(buf,"hello, world %d", i++);
+    sprintf(buf,"hello, world");
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {
         device.displayClear();
-        device.displayLine(32,32,buf);
+
+        sprintf(buf,"Button %d : %d", lastButton, lastButtonState);
+        device.displayLine(32,10,buf);
+
+        sprintf(buf,"Encoder %d : %d", lastEncoder, lastEncoderState);
+        device.displayLine(32,20,buf);
         device.process();
         sleep(1);
+        // since we dont get a msg for stop turning assume it has!
+        lastEncoderState=0;
     }
     std::cout << "stopping test" << std::endl;
     device.stop();

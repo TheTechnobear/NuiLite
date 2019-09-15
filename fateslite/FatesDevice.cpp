@@ -267,7 +267,7 @@ void FatesDeviceImpl_::processGPIO() {
                                 encdir[n] = event.value;
                             }
                             for(auto cb: callbacks_) {
-                                cb->onEncoder(event.code,event.value);
+                                cb->onEncoder(n,event.value);
                             }
                         }
                     }
