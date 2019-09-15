@@ -1,4 +1,4 @@
-#include "FatesLite.h"
+#include "FatesDevice.h"
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>

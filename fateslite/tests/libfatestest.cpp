@@ -1,4 +1,4 @@
-#include "FatesLite.h"
+#include "FatesDevice.h"
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
@@ -22,7 +22,6 @@ void intHandler(int dummy) {
 int main(int argc, const char * argv[]) {
     std::cout << "starting test" << std::endl;
 
-    device.init();
     device.start();
 
     signal(SIGINT, intHandler);
@@ -36,6 +35,5 @@ int main(int argc, const char * argv[]) {
     }
     std::cout << "stopping test" << std::endl;
     device.stop();
-    device.deInit();
     return 0;
 }
