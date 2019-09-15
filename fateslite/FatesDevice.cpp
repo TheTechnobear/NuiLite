@@ -23,6 +23,7 @@
 #include <pthread.h>
 #include <linux/input.h>
 #include <time.h>
+#include <sys/select.h>
 
 
 #define FB_DEVICE "/dev/fb0"
@@ -239,81 +240,92 @@ void* process_gpio_func(void *x) {
     return nullptr;
 }
 
+#include <sys/poll.h>
 void FatesDeviceImpl_::processGPIO() {
 
     int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1,1,1};
-    clock_t encnow[3];
-    clock_t encprev[3];
-    encprev[0] = encprev[1] = encprev[2] =  clock();
+    clock_t encnow[NUM_ENCODERS];
+    clock_t encprev[NUM_ENCODERS];
+    encprev[0] = encprev[1] = encprev[2] = encprev[3] =clock();
     struct input_event event[64];
 
-
     while (keepRunning_) {
-        fd_set fdset;
-        FD_ZERO(&fdset);
+
+	struct pollfd fds[1+NUM_ENCODERS];
+	
+	//FIXME only works if order of fd doesnt change
+	// i.e key/enc 1 to 3 must open
         unsigned fdcount=0;
-        if(keyFd_>0) { FD_SET(keyFd_, &fdset); fdcount++;}
+	if(keyFd_>0) {
+	    fds[fdcount].fd=keyFd_;
+	    fds[fdcount].events = POLLIN;
+	}
         for(auto i=0;i<NUM_ENCODERS;i++) {
-            if(encFd_[i]>0) { FD_SET(encFd_[i]>0, &fdset); fdcount++;}
+            if(encFd_[i]>0) { 
+		    fds[fdcount].fd=encFd_[i];
+		    fds[fdcount].events = POLLIN;
+		    fdcount++;
+	    } else {
+	 	fprintf(stderr,"enc %d not opended", i);
+	    }
         }
 
-        int result = select(fdcount+1, &fdset, NULL, NULL, NULL); //waiting
+	auto result = poll(fds,fdcount,5000);
+	fprintf(stderr,"poll %d %d\n", result, fdcount);
+	for(auto c=0;c<fdcount;c++) {
+	   fprintf(stderr,"   %d %d %d\n", fds[c].fd, fds[c].revents, fds[c].revents&POLLIN);
+	}
 
         if(result>0) {
-            // something to read
-            int rd;
+            if ( fds[0].revents & POLLIN)  {
 
-            if ( FD_ISSET(keyFd_, &fdset) ) {
-
-                auto rd = read(keyFd_, event, sizeof(struct input_event) * 64);
+                auto rd = read(keyFd_, event, sizeof(struct input_event));
+                //auto rd = read(keyFd_, event, sizeof(struct input_event) * 64);
                 if(rd < (int) sizeof(struct input_event)) {
                     fprintf(stderr, "ERROR (key) read error\n");
                 }
                 else {
-                    for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
+                    { unsigned i=0;
+                    //for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
                         if (event[i].type) { // make sure it's not EV_SYN == 0
-                            fprintf(stderr, "enc%d = %d\n", event[i].code, event[i].value);
+                            fprintf(stderr, "button %d = %d\n", event[i].code, event[i].value);
                         }
                     }
                 }
             }
+        }
 
-            for (auto n=0;n<NUM_ENCODERS;n++) {
-                if( encFd_[n]>0 &&  FD_ISSET(keyFd_, &fdset) ) {
+        for (auto n=0;n<NUM_ENCODERS;n++) {
+            	if ( fds[n+1].revents & POLLIN)  {
 
-                    auto rd = read(encFd_[n], event, sizeof(struct input_event) * 64);
+                    auto rd = read(encFd_[n], event, sizeof(struct input_event));
+                    //auto rd = read(encFd_[n], event, sizeof(struct input_event) * 64);
                     if (rd < (int) sizeof(struct input_event)) {
                         fprintf(stderr, "ERROR (enc) read error\n");
                     }
 
                     auto now = clock();
-                    for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
+                    //for (auto i = 0; i < rd / sizeof(struct input_event); i++) {
+                    { unsigned i=0;
                         if (event[i].type) { // make sure it's not EV_SYN == 0
                             auto diff = now - encprev[n];
-                            fprintf(stderr, "%d\t%d\t%lu\n", n, event[i].value, diff);
-                            encprev[i] = now;
+                            fprintf(stderr, "encoder %d\t%d\t%lu\n", n, event[i].value, diff);
+                            encprev[n] = now;
                             if (diff > 100) { // filter out glitches
-                                if (encdir[i] != event[i].value && diff > 500) { // only reverse direction if there is reasonable settling time
-                                    encdir[i] = event[i].value;
+                                if (encdir[n] != event[i].value && diff > 500) { // only reverse direction if there is reasonable settling time
+                                    encdir[n] = event[i].value;
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
     }
 }
 
 
 void FatesDeviceImpl_::initGPIO() {
-    keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY); // Keys
-    if(keyFd_ > 0) {
-//        if(pthread_create(&key_p, NULL, keyProcess, this) ) {
-//            fprintf(stderr, "ERROR (keys) pthread error\n");
-//        }
-    }
 
     const char *enc_filenames[NUM_ENCODERS] = {"/dev/input/by-path/platform-soc:knob1-event",
                                     "/dev/input/by-path/platform-soc:knob2-event",
@@ -321,12 +333,21 @@ void FatesDeviceImpl_::initGPIO() {
                                     "/dev/input/by-path/platform-soc:knob4-event"};
     for(auto i=0; i < NUM_ENCODERS; i++) {
         encFd_[i] = opengpio(enc_filenames[i], O_RDONLY);
+	//encFd_[i]=0;
         if(encFd_[i] > 0) {
+		fprintf(stderr, "success open enc %d, %d\n", i,encFd_[i]);
 //            EncArg* pEncArg=new EncArg(this,i);
 //            if(pthread_create(&enc_p[i], NULL, encProcess, pEncArg) ) {
 //                fprintf(stderr, "ERROR (enc%d) pthread error\n",i);
 //            }
         }
+    }
+
+    keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY); // Keys
+    if(keyFd_ > 0) {
+//        if(pthread_create(&key_p, NULL, keyProcess, this) ) {
+//            fprintf(stderr, "ERROR (keys) pthread error\n");
+//        }
     }
 
     gpioThread_ = std::thread(process_gpio_func, this);
