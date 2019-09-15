@@ -59,9 +59,9 @@ int main(int argc, const char * argv[]) {
         sprintf(buf,"Encoder %d : %d", lastEncoder, lastEncoderState);
         device.displayLine(32,20,buf);
         device.process();
+        lastEncoderState=0;
         sleep(1);
         // since we dont get a msg for stop turning assume it has!
-        lastEncoderState=0;
     }
     std::cout << "stopping test" << std::endl;
     device.stop();
