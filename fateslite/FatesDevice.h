@@ -26,6 +26,7 @@ public:
     unsigned process();
     void addCallback(std::shared_ptr<FatesCallback>);
 
+    void displayClear();
     void displayLine(int x , int y , const std::string& str);
 
 private:

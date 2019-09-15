@@ -62,6 +62,7 @@ public:
     unsigned process();
     void addCallback(std::shared_ptr<FatesCallback>);
 
+    void displayClear();
     void displayLine(int x, int y, const std::string &str);
 
     // public but not part of interface!
@@ -122,6 +123,10 @@ void FatesDevice::addCallback(std::shared_ptr<FatesCallback> cb) {
 
 }
 
+void FatesDevice::displayClear() {
+    impl_->displayClear();
+}
+
 void FatesDevice::displayLine(int x, int y, const std::string &str) {
     impl_->displayLine(x, y, str);
 }
@@ -163,6 +168,28 @@ unsigned FatesDeviceImpl_::process() {
     displayPaint();
     return 0;
 }
+
+
+//// display functions
+
+void FatesDeviceImpl_::displayPaint() {
+    cairo_paint(crfb_);
+
+}
+
+void FatesDeviceImpl_::displayClear() {
+    cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
+    cairo_paint(cr_);
+    cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
+}
+
+void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
+    cairo_set_source_rgb(cr_, 1, 1, 1); //!!
+    cairo_move_to(cr_, x, y);
+    cairo_show_text(cr_, str.c_str());
+    cairo_fill(cr_);
+}
+
 
 
 //////  ENCODER AND KEY HANDLING //////////////////////////////////////
@@ -238,10 +265,9 @@ void FatesDeviceImpl_::processGPIO() {
                         if (diff > 100) { // filter out glitches
                             if (encdir[n] != event.value && diff > 500) { // only reverse direction if there is reasonable settling time
                                 encdir[n] = event.value;
-
-                                for(auto cb: callbacks_) {
-                                    cb->onEncoder(event.code,event.value);
-                                }
+                            }
+                            for(auto cb: callbacks_) {
+                                cb->onEncoder(event.code,event.value);
                             }
                         }
                     }
@@ -310,20 +336,6 @@ void FatesDeviceImpl_::deinitDisplay() {
     cairo_destroy(crfb_);
     cairo_linuxfb_surface_destroy(surfacefb_);
 }
-
-
-void FatesDeviceImpl_::displayPaint() {
-    cairo_paint(crfb_);
-
-}
-
-void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
-    cairo_set_source_rgb(cr_, 1, 1, 1); //!!
-    cairo_move_to(cr_, x, y);
-    cairo_show_text(cr_, str.c_str());
-    cairo_fill(cr_);
-}
-
 
 
 ///////// helper functions

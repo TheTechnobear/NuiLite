@@ -19,14 +19,16 @@ void intHandler(int dummy) {
     device.stop();
 }
 
+char buf[100];
+
 class TestCallback : public FatesLite::FatesCallback {
 public:
     virtual void onButton(unsigned id, unsigned value)  {
-        std::cerr << "button " << id << ":" << value << std::endl;
+        sprintf(buf,"button %d : %d", id, value);
     }
 
     virtual void onEncoder(unsigned id, int value)  {
-        std::cerr << "encoder " << id << ":" << value << std::endl;
+        sprintf(buf,"encoder %d : %d", id, value);
     }
 };
 
@@ -38,12 +40,11 @@ int main(int argc, const char * argv[]) {
 
     signal(SIGINT, intHandler);
 
+    sprintf(buf,"hello, world %d", i++);
 
-    char buf[100];
     std::cout << "started test" << std::endl;
-    unsigned int i=0;
     while(keepRunning) {
-        sprintf(buf,"hello, world %d", i++);
+        device.displayClear();
         device.displayLine(32,32,buf);
         device.process();
         sleep(1);
