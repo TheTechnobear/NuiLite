@@ -6,9 +6,11 @@ namespace FatesLite {
 
 
 class FatesCallback {
+public:
+    FatesCallback() {;}
     virtual ~FatesCallback() = default;
-    virtual void onEncoder(unsigned id, unsigned value) { ; }
-    virtual void onButton(unsigned id, unsigned value) { ; }
+    virtual void onButton(unsigned id, unsigned value) = 0;
+    virtual void onEncoder(unsigned id, int value) =0;
 };
 
 

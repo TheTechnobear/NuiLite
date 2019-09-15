@@ -168,68 +168,6 @@ unsigned FatesDeviceImpl_::process() {
 //////  ENCODER AND KEY HANDLING //////////////////////////////////////
 
 
-//struct EncArg {
-//    EncArg(FatesDeviceImpl_* pThis,unsigned enc) : pThis_(pThis),enc_(enc) { ; }
-//    FatesDeviceImpl_* pThis_;
-//    unsigned enc_;
-//};
-//
-//void *encProcess(void *x) {
-//    auto pEncArg= static_cast<EncArg*>(x);
-//    auto pThis=pEncArg->pThis_;
-//    int n = pEncArg->enc_;
-//    delete pEncArg;
-//
-//    int rd;
-//    unsigned int i;
-//    struct input_event event[64];
-//    int dir[FatesDevice::num_enc] = {1,1,1};
-//    clock_t now[3];
-//    clock_t prev[3];
-//    clock_t diff;
-//    prev[0] = prev[1] = prev[2] =  clock();
-//
-//    while(1) {
-//        rd = read(pThis->enc_fd[n], event, sizeof(struct input_event) * 64);
-//        if(rd < (int) sizeof(struct input_event)) {
-//            fprintf(stderr, "ERROR (enc) read error\n");
-//        }
-//
-//        for(i=0;i<rd/sizeof(struct input_event);i++) {
-//            if(event[i].type) { // make sure it's not EV_SYN == 0
-//                now[i] = clock();
-//                diff = now[i] - prev[i];
-//                fprintf(stderr, "%d\t%d\t%lu\n", n, event[i].value, diff);
-//                prev[i] = now[i];
-//                if(diff > 100) { // filter out glitches
-//                    if(dir[i] != event[i].value && diff > 500) { // only reverse direction if there is reasonable settling time
-//                        dir[i] = event[i].value;
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//void *keyProcess(void *x) {
-//    auto pThis= static_cast<FatesDeviceImpl_*>(x);
-//    int rd;
-//    unsigned int i;
-//    struct input_event event[64];
-//
-//    while(1) {
-//        rd = read(pThis->key_fd, event, sizeof(struct input_event) * 64);
-//        if(rd < (int) sizeof(struct input_event)) {
-//            fprintf(stderr, "ERROR (key) read error\n");
-//        }
-//
-//        for(i=0;i<rd/sizeof(struct input_event);i++) {
-//            if(event[i].type) { // make sure it's not EV_SYN == 0
-//                fprintf(stderr, "enc%d = %d\n", event[i].code, event[i].value);
-//            }
-//        }
-//    }
-//}
 
 void *process_gpio_func(void *x) {
     auto pThis = static_cast<FatesDeviceImpl_ *>(x);
@@ -277,7 +215,10 @@ void FatesDeviceImpl_::processGPIO() {
                     fprintf(stderr, "ERROR (key) read error\n");
                 } else {
                     if (event.type) { // make sure it's not EV_SYN == 0
-                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
+//                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
+                        for(auto cb: callbacks_) {
+                            cb->onButton(event.code,event.value);
+                        }
                     }
                 }
             }
@@ -292,11 +233,15 @@ void FatesDeviceImpl_::processGPIO() {
                     auto now = clock();
                     if (event.type) { // make sure it's not EV_SYN == 0
                         auto diff = now - encprev[n];
-                        fprintf(stderr, "encoder %d\t%d\t%lu\n", n, event.value, diff);
+//                        fprintf(stderr, "encoder %d\t%d\t%lu\n", n, event.value, diff);
                         encprev[n] = now;
                         if (diff > 100) { // filter out glitches
                             if (encdir[n] != event.value && diff > 500) { // only reverse direction if there is reasonable settling time
                                 encdir[n] = event.value;
+
+                                for(auto cb: callbacks_) {
+                                    cb->onEncoder(event.code,event.value);
+                                }
                             }
                         }
                     }
@@ -314,33 +259,18 @@ void FatesDeviceImpl_::initGPIO() {
                                                "/dev/input/by-path/platform-soc:knob2-event",
                                                "/dev/input/by-path/platform-soc:knob3-event",
                                                "/dev/input/by-path/platform-soc:knob4-event"};
+    keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY);
     for (auto i = 0; i < NUM_ENCODERS; i++) {
         encFd_[i] = opengpio(enc_filenames[i], O_RDONLY);
-        if (encFd_[i] > 0) {
-            fprintf(stderr, "success open enc %d, %d\n", i, encFd_[i]);
-//            EncArg* pEncArg=new EncArg(this,i);
-//            if(pthread_create(&enc_p[i], NULL, encProcess, pEncArg) ) {
-//                fprintf(stderr, "ERROR (enc%d) pthread error\n",i);
-//            }
-        }
-    }
-
-    keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY); // Keys
-    if (keyFd_ > 0) {
-//        if(pthread_create(&key_p, NULL, keyProcess, this) ) {
-//            fprintf(stderr, "ERROR (keys) pthread error\n");
-//        }
     }
 
     gpioThread_ = std::thread(process_gpio_func, this);
 }
 
 void FatesDeviceImpl_::deinitGPIO() {
-    // destroy threads monitor keys and encoders
-//    pthread_cancel(key_p);
-//    for (unsigned i = 0; i < num_enc; i++) {
-//        pthread_cancel(enc_p[i]);
-//    }
+    keepRunning_=false;
+    if(gpioThread_.joinable() ) gpioThread_.join();
+
 }
 
 ////////////////////////    DISPLAY HANDLING ////////////////////////////////////////////
