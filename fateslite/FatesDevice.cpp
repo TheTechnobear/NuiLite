@@ -256,6 +256,7 @@ void FatesDeviceImpl_::processGPIO() {
         if (keyFd_ > 0) {
             fds[fdcount].fd = keyFd_;
             fds[fdcount].events = POLLIN;
+            fdcount++;
         }
         for (auto i = 0; i < NUM_ENCODERS; i++) {
             if (encFd_[i] > 0) {
@@ -263,19 +264,15 @@ void FatesDeviceImpl_::processGPIO() {
                 fds[fdcount].events = POLLIN;
                 fdcount++;
             } else {
-                fprintf(stderr, "enc %d not opended", i);
+                fprintf(stderr, "enc %d not opened", i);
             }
         }
 
         auto result = poll(fds, fdcount, 5000);
-        fprintf(stderr, "poll %d %d\n", result, fdcount);
-        for (auto c = 0; c < fdcount; c++) {
-            fprintf(stderr, "   %d %d %d\n", fds[c].fd, fds[c].revents, fds[c].revents & POLLIN);
-        }
 
         if (result > 0) {
             if (fds[0].revents & POLLIN) {
-                auto rd = read(keyFd_, event, sizeof(struct input_event));
+                auto rd = read(keyFd_, &event, sizeof(struct input_event));
                 if (rd < (int) sizeof(struct input_event)) {
                     fprintf(stderr, "ERROR (key) read error\n");
                 } else {
@@ -287,7 +284,7 @@ void FatesDeviceImpl_::processGPIO() {
 
             for (auto n = 0; n < NUM_ENCODERS; n++) {
                 if (fds[n + 1].revents & POLLIN) {
-                    auto rd = read(encFd_[n], event, sizeof(struct input_event));
+                    auto rd = read(encFd_[n], &event, sizeof(struct input_event));
                     if (rd < (int) sizeof(struct input_event)) {
                         fprintf(stderr, "ERROR (enc) read error\n");
                     }
