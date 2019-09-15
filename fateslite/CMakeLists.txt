@@ -1,4 +1,4 @@
-project(flite)
+project(fateslite)
 
 find_path(LIBCAIRO_INC NAME cairo.h PATHS /usr/include/cairo /usr/local/include/cairo)
 find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib)
@@ -19,17 +19,17 @@ set(FL_SRC
 
 
 
-add_library(flite SHARED ${FL_SRC} ${FL_H})
+add_library(fateslite SHARED ${FL_SRC} ${FL_H})
 
-#target_link_libraries(flite oscpack portaudio cjson)
+#target_link_libraries(fateslite oscpack portaudio cjson)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    target_link_libraries(flite atomic)
+    target_link_libraries(fateslite atomic)
 endif ()
 
-target_link_libraries(flite "dl" "pthread" ${LIBCAIRO})
+target_link_libraries(fateslite "dl" "pthread" ${LIBCAIRO})
 
-target_include_directories(flite PUBLIC
+target_include_directories(fateslite PUBLIC
         .
         )
 
