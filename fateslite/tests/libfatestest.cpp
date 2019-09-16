@@ -32,7 +32,7 @@ public:
 
     void onEncoder(unsigned id, int value) override  {
 	char buf[100];
-        sprintf(buf,"Encoder %d : %d", id, value);
+        sprintf(buf,"Encoder %d : %d ", id, value);
         device.displayLine(32,20,buf);
         fprintf(stderr,"encoder %d : %d\n", id, value);
     }
@@ -48,10 +48,11 @@ int main(int argc, const char * argv[]) {
     device.start();
 
     signal(SIGINT, intHandler);
+    device.displayClear();
+    device.displayLine(32,20,"Hello world");
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {
-        device.displayClear();
         device.process();
         sleep(1);
     }

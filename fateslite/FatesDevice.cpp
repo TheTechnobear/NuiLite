@@ -145,7 +145,7 @@ void FatesDevice::displayClear() {
 }
 
 void FatesDevice::displayLine(int x, int y, const std::string &str) {
-    cairo_text_extents (cr, utf8, &extents);    impl_->displayLine(x, y, str);
+    impl_->displayLine(x, y, str);
 }
 
 
@@ -223,12 +223,12 @@ void FatesDeviceImpl_::displayClear() {
 void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
 
     cairo_text_extents_t extents;
-    cairo_text_extents (cr_, str.c_str(), &extents);
+    cairo_text_extents (cr_, "0", &extents);
     cairo_set_source_rgb(cr_, 0, 0, 0);
-    cairo_rectangle(cr_,x,y,extents.width,extents.height);
+    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
     cairo_fill(cr_);
 
-    cairo_set_source_rgb(cr_, 1, 1, 1); //!!
+    cairo_set_source_rgb(cr_, 1, 1, 1); 
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
@@ -249,7 +249,7 @@ void *process_gpio_func(void *x) {
 
 void FatesDeviceImpl_::processGPIO() {
 
-    int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1, 1, 1};
+    int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1, 1, 1,1};
     clock_t encnow[NUM_ENCODERS];
     clock_t encprev[NUM_ENCODERS];
     encprev[0] = encprev[1] = encprev[2] = encprev[3] = clock();
