@@ -145,7 +145,7 @@ void FatesDevice::displayClear() {
 }
 
 void FatesDevice::displayLine(int x, int y, const std::string &str) {
-    impl_->displayLine(x, y, str);
+    cairo_text_extents (cr, utf8, &extents);    impl_->displayLine(x, y, str);
 }
 
 
@@ -221,6 +221,13 @@ void FatesDeviceImpl_::displayClear() {
 }
 
 void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
+
+    cairo_text_extents_t extents;
+    cairo_text_extents (cr_, str.c_str(), &extents);
+    cairo_set_source_rgb(cr_, 0, 0, 0);
+    cairo_rectangle(cr_,x,y,extents.width,extents.height);
+    cairo_fill(cr_);
+
     cairo_set_source_rgb(cr_, 1, 1, 1); //!!
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
