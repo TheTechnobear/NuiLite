@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <cairo.h>
-//#include <cairo-ft.h>
+#include <cairo-ft.h>
 
 // gpio
 #include <unistd.h>
@@ -354,7 +354,7 @@ void FatesDeviceImpl_::initDisplay() {
     cairo_set_operator(crfb_, CAIRO_OPERATOR_SOURCE);
     cairo_set_source_surface(crfb_, surface_, 0, 0);
 
-    setup_local_fonts(resPath.c_str());
+    setup_local_fonts(resPath_.c_str());
     // clear display
     cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr_);
