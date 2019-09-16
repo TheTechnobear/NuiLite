@@ -76,7 +76,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release/bin)
 
 ############
-#add_subdirectory(external/cJSON cjson)
+add_subdirectory(external/moodycamel moodycamel)
 
 
 add_subdirectory(fateslite)

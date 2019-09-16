@@ -6,7 +6,7 @@ find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib)
 
 include_directories(
     ${LIBCAIRO_INC}
-#        "${PROJECT_SOURCE_DIR}/../external/libusb"
+   "${PROJECT_SOURCE_DIR}/../external/moodycamel"
 )
 
 set(FL_H

@@ -25,6 +25,8 @@
 #include <time.h>
 #include <sys/poll.h>
 
+#include <readerwriterqueue.h>
+
 
 #define FB_DEVICE "/dev/fb0"
 
@@ -50,6 +52,15 @@
 
 
 namespace FatesLite {
+
+struct FatesEventMsg {
+    enum {
+        F_BUTTON,
+        F_ENCODER
+    } type_;
+    unsigned id_;
+    int value_;
+};
 
 // implementation class
 class FatesDeviceImpl_ {
@@ -83,6 +94,7 @@ private:
     std::thread gpioThread_;
     bool keepRunning_;
 
+    static constexpr unsigned MAX_EVENTS = 64;
     static constexpr unsigned NUM_ENCODERS = 4;
     int keyFd_;
     int encFd_[NUM_ENCODERS];
@@ -92,6 +104,7 @@ private:
     cairo_surface_t *surface_;
     cairo_t *cr_;
     std::vector<std::shared_ptr<FatesCallback>> callbacks_;
+    moodycamel::ReaderWriterQueue<FatesEventMsg> eventQueue_;
 };
 
 //FatesDevice proxy
@@ -138,7 +151,7 @@ extern void cairo_linuxfb_surface_destroy(void *device);
 extern cairo_surface_t *cairo_linuxfb_surface_create();
 extern int opengpio(const char *pathname, int flags);
 
-FatesDeviceImpl_::FatesDeviceImpl_() {
+FatesDeviceImpl_::FatesDeviceImpl_()  : eventQueue_(MAX_EVENTS) {
     ;
 }
 
@@ -164,7 +177,23 @@ void FatesDeviceImpl_::stop() {
 }
 
 unsigned FatesDeviceImpl_::process() {
-    //encoder/key poll?
+    FatesEventMsg msg;
+    while (eventQueue_.try_dequeue(msg)) {
+        for(auto cb: callbacks_) {
+            switch(msg.type_) {
+                case FatesEventMsg::F_BUTTON : {
+                    cb->onButton(msg.id_,msg.value_);
+                    break;
+                }
+                case FatesEventMsg::F_ENCODER : {
+                    cb->onEncoder(msg.id_,msg.value_);
+                    break;
+                }
+                default:
+                    ; // ignore
+            }
+        }
+   }
     displayPaint();
     return 0;
 }
@@ -243,9 +272,11 @@ void FatesDeviceImpl_::processGPIO() {
                 } else {
                     if (event.type) { // make sure it's not EV_SYN == 0
 //                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
-                        for(auto cb: callbacks_) {
-                            cb->onButton(event.code,event.value);
-                        }
+                        FatesEventMsg msg;
+                        msg.type_ = FatesEventMsg::F_BUTTON;
+                        msg.id_ = event.code;
+                        msg.value_ = event.value;
+                        eventQueue_.enqueue(msg);
                     }
                 }
             }
@@ -266,9 +297,11 @@ void FatesDeviceImpl_::processGPIO() {
                             if (encdir[n] != event.value && diff > 500) { // only reverse direction if there is reasonable settling time
                                 encdir[n] = event.value;
                             }
-                            for(auto cb: callbacks_) {
-                                cb->onEncoder(n,event.value);
-                            }
+                            FatesEventMsg msg;
+                            msg.type_ = FatesEventMsg::F_ENCODER;
+                            msg.id_ = n;
+                            msg.value_ = event.value;
+                            eventQueue_.enqueue(msg);
                         }
                     }
                 }
