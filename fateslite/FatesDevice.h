@@ -18,7 +18,7 @@ class FatesDeviceImpl_;
 
 class FatesDevice {
 public:
-    FatesDevice();
+    FatesDevice(const char* resourcePath=nullptr);
     ~FatesDevice();
 
     void start();
