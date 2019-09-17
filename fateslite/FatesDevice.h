@@ -27,7 +27,9 @@ public:
     void addCallback(std::shared_ptr<FatesCallback>);
 
     void displayClear();
-    void displayLine(int x , int y , const std::string& str);
+    // simple text displays
+    void displayLine(unsigned line,const std::string& str);
+    void invertLine(unsigned line);
 
 private:
     FatesDeviceImpl_* impl_;

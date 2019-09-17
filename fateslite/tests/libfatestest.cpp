@@ -26,14 +26,15 @@ public:
     void onButton(unsigned id, unsigned value)  override {
 	char buf[100];
         sprintf(buf,"Button %d : %d", id, value);
-        device.displayLine(32,10,buf);
+        device.displayLine(0,buf);
         fprintf(stderr,"button %d : %d\n", id, value);
+        if(value) device.invertLine(0); // invert hello,world
     }
 
     void onEncoder(unsigned id, int value) override  {
 	char buf[100];
         sprintf(buf,"Encoder %d : %d ", id, value);
-        device.displayLine(32,20,buf);
+        device.displayLine(1,buf);
         fprintf(stderr,"encoder %d : %d\n", id, value);
     }
 };
@@ -49,7 +50,7 @@ int main(int argc, const char * argv[]) {
 
     signal(SIGINT, intHandler);
     device.displayClear();
-    device.displayLine(32,20,"Hello world");
+    device.displayLine(3,"Hello world");
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {

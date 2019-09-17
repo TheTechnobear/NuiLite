@@ -77,7 +77,8 @@ public:
     void addCallback(std::shared_ptr<FatesCallback>);
 
     void displayClear();
-    void displayLine(int x, int y, const std::string &str);
+    void displayLine(unsigned line, const std::string &str);
+    void invertLine(unsigned line);
 
     // public but not part of interface!
     void processGPIO();
@@ -144,8 +145,12 @@ void FatesDevice::displayClear() {
     impl_->displayClear();
 }
 
-void FatesDevice::displayLine(int x, int y, const std::string &str) {
-    impl_->displayLine(x, y, str);
+void FatesDevice::displayLine(unsigned line, const std::string &str) {
+    impl_->displayLine(line,str);
+}
+
+void FatesDevice::invertLine(unsigned line) {
+    impl_->invertLine(line);
 }
 
 
@@ -220,18 +225,31 @@ void FatesDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void FatesDeviceImpl_::displayLine(int x, int y, const std::string &str) {
+void FatesDeviceImpl_::displayLine(unsigned line,const std::string &str) {
+    unsigned x = 0;
+    unsigned y = line * 10 + 10;
 
-    cairo_text_extents_t extents;
-    cairo_text_extents (cr_, "0", &extents);
     cairo_set_source_rgb(cr_, 0, 0, 0);
-    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
+//    cairo_text_extents_t extents;
+//    cairo_text_extents (cr_, "0", &extents);
+//    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
+    cairo_rectangle(cr_,x,y+1,SCREEN_X,-10);
     cairo_fill(cr_);
 
     cairo_set_source_rgb(cr_, 1, 1, 1); 
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
+}
+
+void FatesDeviceImpl_::invertLine(unsigned line) {
+    unsigned x = 0;
+    unsigned y = line * 10 + 10;
+    cairo_set_source_rgb (cr_, 1., 1., 1.);
+    cairo_set_operator (cr_, CAIRO_OPERATOR_DIFFERENCE);
+    cairo_rectangle(cr_,x,y+1,SCREEN_X,-10);
+    cairo_fill(cr_);
+    cairo_set_operator (cr_, CAIRO_OPERATOR_OVER);
 }
 
 
