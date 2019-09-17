@@ -30,6 +30,7 @@ public:
     // simple text displays
     void displayLine(unsigned line,const std::string& str);
     void invertLine(unsigned line);
+    void clearLine(unsigned line);
 
 private:
     FatesDeviceImpl_* impl_;

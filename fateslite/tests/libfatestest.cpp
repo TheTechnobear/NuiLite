@@ -28,7 +28,15 @@ public:
         sprintf(buf,"Button %d : %d", id, value);
         device.displayLine(0,buf);
         fprintf(stderr,"button %d : %d\n", id, value);
-        if(value) device.invertLine(0); // invert hello,world
+        if(value) {
+            switch(id) {
+                case 0 : device.displayLine(3, "hello, world"); break;
+                case 1 : device.clearLine(3); break;
+                case 2 : device.invertLine(3); break;
+                default: break;
+
+            }
+        }
     }
 
     void onEncoder(unsigned id, int value) override  {
