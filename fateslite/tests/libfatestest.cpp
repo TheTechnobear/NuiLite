@@ -26,13 +26,20 @@ public:
     void onButton(unsigned id, unsigned value)  override {
 	char buf[100];
         sprintf(buf,"Button %d : %d", id, value);
-        device.displayLine(0,buf);
+	device.clearText(0);
+        device.displayText(0,buf);
         fprintf(stderr,"button %d : %d\n", id, value);
         if(value) {
             switch(id) {
-                case 0 : device.displayLine(3, "hello, world"); break;
-                case 1 : device.clearLine(3); break;
-                case 2 : device.invertLine(3); break;
+                case 0 : {
+			device.clearText(3);
+			device.displayText(3,0,"hello");
+			device.displayText(3,25,"world");
+			device.displayText(4,10,"world");
+			break;
+		}
+                case 1 : device.clearText(3); break;
+                case 2 : device.invertText(3); break;
                 default: break;
 
             }
@@ -42,7 +49,8 @@ public:
     void onEncoder(unsigned id, int value) override  {
 	char buf[100];
         sprintf(buf,"Encoder %d : %d ", id, value);
-        device.displayLine(1,buf);
+	device.clearText(1);
+        device.displayText(1,buf);
         fprintf(stderr,"encoder %d : %d\n", id, value);
     }
 };
@@ -58,7 +66,7 @@ int main(int argc, const char * argv[]) {
 
     signal(SIGINT, intHandler);
     device.displayClear();
-    device.displayLine(3,"Hello world");
+    device.displayText(3,"Hello world");
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {

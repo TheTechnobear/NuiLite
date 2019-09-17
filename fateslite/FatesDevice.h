@@ -28,9 +28,10 @@ public:
 
     void displayClear();
     // simple text displays
-    void displayLine(unsigned line,const std::string& str);
-    void invertLine(unsigned line);
-    void clearLine(unsigned line);
+    void displayText(unsigned line,const std::string& str);
+    void displayText(unsigned line,unsigned col,const std::string& str);
+    void invertText(unsigned line);
+    void clearText(unsigned line);
 
 private:
     FatesDeviceImpl_* impl_;

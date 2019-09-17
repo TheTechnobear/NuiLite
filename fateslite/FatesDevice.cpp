@@ -77,9 +77,10 @@ public:
     void addCallback(std::shared_ptr<FatesCallback>);
 
     void displayClear();
-    void displayLine(unsigned line, const std::string &str);
-    void invertLine(unsigned line);
-    void clearLine(unsigned line);
+    void displayText(unsigned line, const std::string &str);
+    void displayText(unsigned line, unsigned col, const std::string &str);
+    void invertText(unsigned line);
+    void clearText(unsigned line);
 
     // public but not part of interface!
     void processGPIO();
@@ -146,16 +147,20 @@ void FatesDevice::displayClear() {
     impl_->displayClear();
 }
 
-void FatesDevice::displayLine(unsigned line, const std::string &str) {
-    impl_->displayLine(line,str);
+void FatesDevice::displayText(unsigned line, unsigned col,const std::string &str) {
+    impl_->displayText(line,col,str);
 }
 
-void FatesDevice::invertLine(unsigned line) {
-    impl_->invertLine(line);
+void FatesDevice::displayText(unsigned line, const std::string &str) {
+    impl_->displayText(line,str);
 }
 
-void FatesDevice::clearLine(unsigned line) {
-    impl_->clearLine(line);
+void FatesDevice::invertText(unsigned line) {
+    impl_->invertText(line);
+}
+
+void FatesDevice::clearText(unsigned line) {
+    impl_->clearText(line);
 }
 
 // fwd decl for helper functions
@@ -229,11 +234,12 @@ void FatesDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void FatesDeviceImpl_::displayLine(unsigned line,const std::string &str) {
-    unsigned x = 0;
+void FatesDeviceImpl_::displayText(unsigned line,const std::string &str) {
+    displayText(line,0,str);
+}
+void FatesDeviceImpl_::displayText(unsigned line,unsigned col, const std::string &str) {
+    unsigned x = col * 4;
     unsigned y = line * 10 + 10;
-
-    clearLine(line);
 
     cairo_set_source_rgb(cr_, 1, 1, 1); 
     cairo_move_to(cr_, x, y);
@@ -241,7 +247,7 @@ void FatesDeviceImpl_::displayLine(unsigned line,const std::string &str) {
     cairo_fill(cr_);
 }
 
-void FatesDeviceImpl_::invertLine(unsigned line) {
+void FatesDeviceImpl_::invertText(unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
     cairo_set_source_rgb (cr_, 1., 1., 1.);
@@ -251,7 +257,7 @@ void FatesDeviceImpl_::invertLine(unsigned line) {
     cairo_set_operator (cr_, CAIRO_OPERATOR_OVER);
 }
 
-void FatesDeviceImpl_::clearLine(unsigned line) {
+void FatesDeviceImpl_::clearText(unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
     cairo_set_source_rgb(cr_, 0, 0, 0);
@@ -400,10 +406,9 @@ void FatesDeviceImpl_::initDisplay() {
     cairo_set_font_options(cr_, font_options);
     cairo_font_options_destroy(font_options);
 
-    // cairo_set_font_face (cr_, ct[0]);
+    cairo_set_font_face (cr_, ct[0]);
 
     //cairo_select_font_face(cr_, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_select_font_face(cr_, "vera", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr_, 8.0);
 
     cairo_set_source_rgb(cr_, 1, 1, 1); //!!
