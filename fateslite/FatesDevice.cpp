@@ -400,11 +400,11 @@ void FatesDeviceImpl_::initDisplay() {
     cairo_set_font_options(cr_, font_options);
     cairo_font_options_destroy(font_options);
 
-    cairo_set_font_face (cr_, ct[0]);
-    cairo_set_font_size(cr_, 8.0);
+    // cairo_set_font_face (cr_, ct[0]);
 
-    // cairo_select_font_face(cr_, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-    // cairo_set_font_size(cr_, 8.0);
+    //cairo_select_font_face(cr_, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_select_font_face(cr_, "vera", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr_, 8.0);
 
     cairo_set_source_rgb(cr_, 1, 1, 1); //!!
 
