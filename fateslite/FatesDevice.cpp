@@ -601,10 +601,10 @@ void setup_local_fonts(const char* resPath) {
 
     assert(i == NUM_FONTS);
 
-    fprintf(stderr, "fonts: \n");
-    for (int i=0; i<NUM_FONTS; ++i) {
-      fprintf(stderr, "  %d: %s\n", i, font_path[i]);
-    }
+    //fprintf(stderr, "fonts: \n");
+    //for (int i=0; i<NUM_FONTS; ++i) {
+     // fprintf(stderr, "  %d: %s\n", i, font_path[i]);
+    //}
     
     char filename[256];
 
