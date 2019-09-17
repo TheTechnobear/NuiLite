@@ -289,7 +289,7 @@ void FatesDeviceImpl_::processGPIO() {
 //                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
                         FatesEventMsg msg;
                         msg.type_ = FatesEventMsg::F_BUTTON;
-                        msg.id_ = event.code;
+                        msg.id_ = event.code-1; // make zerp based
                         msg.value_ = event.value;
                         eventQueue_.enqueue(msg);
                     }
