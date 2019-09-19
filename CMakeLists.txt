@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.11)
 
-project(fateslite)
+project(nuilite)
 
-set(PROJECT_NAME fateslite)
+set(PROJECT_NAME nuilite)
 set(SPL_VERSION_MAJOR 0)
 set(SPL_VERSION_MINOR 1)
 set(SPL_VERSION_UPDATE 0)
@@ -14,9 +14,9 @@ if(WIN32)
 endif()
 
 if (APPLE)
-    set(EXECUTABLE_NAME FatesLite)
+    set(EXECUTABLE_NAME NuiLite)
 elseif (UNIX)
-    set(EXECUTABLE_NAME fatelite)
+    set(EXECUTABLE_NAME nuilite)
 endif (APPLE)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -79,5 +79,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release/bin)
 add_subdirectory(external/moodycamel moodycamel)
 
 
-add_subdirectory(fateslite)
+add_subdirectory(nuilite)
 

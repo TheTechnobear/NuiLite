@@ -2,29 +2,29 @@
 #include <string>
 #include <memory>
 
-namespace FatesLite {
+namespace NuiLite {
 
 
-class FatesCallback {
+class NuiCallback {
 public:
-    FatesCallback() {;}
-    virtual ~FatesCallback() = default;
+    NuiCallback() {;}
+    virtual ~NuiCallback() = default;
     virtual void onButton(unsigned id, unsigned value) = 0;
     virtual void onEncoder(unsigned id, int value) =0;
 };
 
 
-class FatesDeviceImpl_;
+class NuiDeviceImpl_;
 
-class FatesDevice {
+class NuiDevice {
 public:
-    FatesDevice(const char* resourcePath=nullptr);
-    ~FatesDevice();
+    NuiDevice(const char* resourcePath=nullptr);
+    ~NuiDevice();
 
     void start();
     void stop();
     unsigned process();
-    void addCallback(std::shared_ptr<FatesCallback>);
+    void addCallback(std::shared_ptr<NuiCallback>);
 
     void displayClear();
     // simple text displays
@@ -34,7 +34,7 @@ public:
     void clearText(unsigned line);
     void drawPNG(unsigned x, unsigned y, const char* filename);
 private:
-    FatesDeviceImpl_* impl_;
+    NuiDeviceImpl_* impl_;
 };
 
 

@@ -1,4 +1,4 @@
-#include "FatesDevice.h"
+#include "NuiDevice.h"
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
@@ -7,10 +7,10 @@
 static volatile bool keepRunning = 1;
 
 
-FatesLite::FatesDevice device;
+NuiLite::NuiDevice device;
 
 void intHandler(int dummy) {
-    std::cerr << "LibFatesTest intHandler called" << std::endl;
+    std::cerr << "LibNuiTest intHandler called" << std::endl;
     if(!keepRunning) {
         sleep(1);
         exit(-1);
@@ -21,7 +21,7 @@ void intHandler(int dummy) {
 
 
 
-class TestCallback : public FatesLite::FatesCallback {
+class TestCallback : public NuiLite::NuiCallback {
 public:
     void onButton(unsigned id, unsigned value)  override {
 	char buf[100];

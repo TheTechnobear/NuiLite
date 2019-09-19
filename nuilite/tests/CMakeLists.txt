@@ -9,14 +9,14 @@ include_directories (
 
 )
 
-set(FLTEST1_SRC "rawfatestest.cpp")
-add_executable(rawfatestest ${FLTEST1_SRC})
-target_link_libraries (rawfatestest fateslite ${LIBCAIRO} pthread )
+set(TEST1_SRC "rawfatestest.cpp")
+add_executable(rawfatestest ${TEST1_SRC})
+target_link_libraries (rawfatestest nuilite ${LIBCAIRO} pthread )
 
 
-set(FLTEST2_SRC "libfatestest.cpp")
-add_executable(libfatestest ${FLTEST2_SRC})
-target_link_libraries (libfatestest fateslite ${LIBCAIRO} pthread )
+set(TEST2_SRC "libfatestest.cpp")
+add_executable(libfatestest ${TEST2_SRC})
+target_link_libraries (libfatestest nuilite ${LIBCAIRO} pthread )
 
 #if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 #  target_link_libraries(fatestest atomic)

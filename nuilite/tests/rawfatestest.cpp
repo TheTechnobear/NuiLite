@@ -1,4 +1,4 @@
-#include "FatesDevice.h"
+#include "NuiDevice.h"
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
@@ -302,10 +302,10 @@ handle_ioctl_error:
 
 
 
-FatesLite::FatesDevice device;
+NuiLite::NuiDevice device;
 
 void intHandler(int dummy) {
-    std::cerr << "FatesTest intHandler called" << std::endl;
+    std::cerr << "NuiTest intHandler called" << std::endl;
     if(!keepRunning) {
         sleep(1);
         exit(-1);

@@ -1,4 +1,4 @@
-project(fateslite)
+project(nuilite)
 
 find_path(LIBCAIRO_INC NAME cairo.h PATHS /usr/include/cairo /usr/local/include/cairo)
 find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib)
@@ -13,26 +13,26 @@ include_directories(
 )
 
 set(FL_H
-        FatesDevice.h
+	NuiDevice.h
         )
 
 set(FL_SRC
-        FatesDevice.cpp
+	NuiDevice.cpp
         )
 
 
 
-add_library(fateslite SHARED ${FL_SRC} ${FL_H})
+add_library(nuilite SHARED ${FL_SRC} ${FL_H})
 
-#target_link_libraries(fateslite oscpack portaudio cjson)
+#target_link_libraries(nuilite oscpack portaudio cjson)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    target_link_libraries(fateslite atomic)
+    target_link_libraries(nuilite atomic)
 endif ()
 
-target_link_libraries(fateslite "dl" "pthread" ${LIBCAIRO})
+target_link_libraries(nuilite "dl" "pthread" ${LIBCAIRO})
 
-target_include_directories(fateslite PUBLIC
+target_include_directories(nuilite PUBLIC
         .
         )
 

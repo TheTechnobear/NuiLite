@@ -1,4 +1,4 @@
-#include "FatesDevice.h"
+#include "NuiDevice.h"
 
 #include <memory>
 #include <vector>
@@ -54,27 +54,27 @@
 static cairo_font_face_t *ct[NUM_FONTS];
 
 
-namespace FatesLite {
+namespace NuiLite {
 
-struct FatesEventMsg {
+struct NuiEventMsg {
     enum {
-        F_BUTTON,
-        F_ENCODER
+        N_BUTTON,
+        N_ENCODER
     } type_;
     unsigned id_;
     int value_;
 };
 
 // implementation class
-class FatesDeviceImpl_ {
+class NuiDeviceImpl_ {
 public:
-    FatesDeviceImpl_(const char* resPath);
-    ~FatesDeviceImpl_();
+    NuiDeviceImpl_(const char* resPath);
+    ~NuiDeviceImpl_();
 
     void start();
     void stop();
     unsigned process();
-    void addCallback(std::shared_ptr<FatesCallback>);
+    void addCallback(std::shared_ptr<NuiCallback>);
 
     void displayClear();
     void displayText(unsigned line, const std::string &str);
@@ -111,59 +111,59 @@ private:
     cairo_t *crfb_;
     cairo_surface_t *surface_;
     cairo_t *cr_;
-    std::vector<std::shared_ptr<FatesCallback>> callbacks_;
-    moodycamel::ReaderWriterQueue<FatesEventMsg> eventQueue_;
+    std::vector<std::shared_ptr<NuiCallback>> callbacks_;
+    moodycamel::ReaderWriterQueue<NuiEventMsg> eventQueue_;
 };
 
-//FatesDevice proxy
-FatesDevice::FatesDevice(const char* resPath) {
-    impl_ = new FatesDeviceImpl_(resPath);
+//NuiDevice proxy
+NuiDevice::NuiDevice(const char* resPath) {
+    impl_ = new NuiDeviceImpl_(resPath);
 }
 
-FatesDevice::~FatesDevice() {
+NuiDevice::~NuiDevice() {
     if (impl_) {
         delete impl_;
         impl_ = nullptr;
     }
 }
 
-void FatesDevice::start() {
+void NuiDevice::start() {
     impl_->start();
 }
 
-void FatesDevice::stop() {
+void NuiDevice::stop() {
     impl_->stop();
 }
 
-unsigned FatesDevice::process() {
+unsigned NuiDevice::process() {
     return impl_->process();
 }
 
-void FatesDevice::addCallback(std::shared_ptr<FatesCallback> cb) {
+void NuiDevice::addCallback(std::shared_ptr<NuiCallback> cb) {
     impl_->addCallback(cb);
 
 }
 
-void FatesDevice::displayClear() {
+void NuiDevice::displayClear() {
     impl_->displayClear();
 }
 
-void FatesDevice::displayText(unsigned line, unsigned col,const std::string &str) {
+void NuiDevice::displayText(unsigned line, unsigned col,const std::string &str) {
     impl_->displayText(line,col,str);
 }
 
-void FatesDevice::displayText(unsigned line, const std::string &str) {
+void NuiDevice::displayText(unsigned line, const std::string &str) {
     impl_->displayText(line,str);
 }
 
-void FatesDevice::invertText(unsigned line) {
+void NuiDevice::invertText(unsigned line) {
     impl_->invertText(line);
 }
 
-void FatesDevice::clearText(unsigned line) {
+void NuiDevice::clearText(unsigned line) {
     impl_->clearText(line);
 }
-void FatesDevice::drawPNG(unsigned x, unsigned y, const char* filename) {
+void NuiDevice::drawPNG(unsigned x, unsigned y, const char* filename) {
     impl_->drawPNG(x,y,filename);
 }
 
@@ -177,41 +177,41 @@ void setup_local_fonts(const char*);
 //// start of IMPLEMENTATION
 
 
-FatesDeviceImpl_::FatesDeviceImpl_(const char* resPath)  : eventQueue_(MAX_EVENTS), resPath_(resPath==nullptr ? "" : resPath){
+NuiDeviceImpl_::NuiDeviceImpl_(const char* resPath)  : eventQueue_(MAX_EVENTS), resPath_(resPath==nullptr ? "" : resPath){
     if(resPath_.size()==0) resPath_="/home/we/norns/resources";
 }
 
-FatesDeviceImpl_::~FatesDeviceImpl_() {
+NuiDeviceImpl_::~NuiDeviceImpl_() {
     ;
 }
 
-void FatesDeviceImpl_::addCallback(std::shared_ptr<FatesCallback> cb) {
+void NuiDeviceImpl_::addCallback(std::shared_ptr<NuiCallback> cb) {
     callbacks_.push_back(cb);
 }
 
-void FatesDeviceImpl_::start() {
+void NuiDeviceImpl_::start() {
     keepRunning_ = true;
     initGPIO();
     initDisplay();
 }
 
-void FatesDeviceImpl_::stop() {
+void NuiDeviceImpl_::stop() {
     keepRunning_ = false;
 
     deinitDisplay();
     deinitGPIO();
 }
 
-unsigned FatesDeviceImpl_::process() {
-    FatesEventMsg msg;
+unsigned NuiDeviceImpl_::process() {
+    NuiEventMsg msg;
     while (eventQueue_.try_dequeue(msg)) {
         for(auto cb: callbacks_) {
             switch(msg.type_) {
-                case FatesEventMsg::F_BUTTON : {
+                case NuiEventMsg::N_BUTTON : {
                     cb->onButton(msg.id_,msg.value_);
                     break;
                 }
-                case FatesEventMsg::F_ENCODER : {
+                case NuiEventMsg::N_ENCODER : {
                     cb->onEncoder(msg.id_,msg.value_);
                     break;
                 }
@@ -227,21 +227,21 @@ unsigned FatesDeviceImpl_::process() {
 
 //// display functions
 
-void FatesDeviceImpl_::displayPaint() {
+void NuiDeviceImpl_::displayPaint() {
     cairo_paint(crfb_);
 
 }
 
-void FatesDeviceImpl_::displayClear() {
+void NuiDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr_);
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void FatesDeviceImpl_::displayText(unsigned line,const std::string &str) {
+void NuiDeviceImpl_::displayText(unsigned line,const std::string &str) {
     displayText(line,0,str);
 }
-void FatesDeviceImpl_::displayText(unsigned line,unsigned col, const std::string &str) {
+void NuiDeviceImpl_::displayText(unsigned line,unsigned col, const std::string &str) {
     unsigned x = col * 4;
     unsigned y = line * 10 + 10;
 
@@ -251,7 +251,7 @@ void FatesDeviceImpl_::displayText(unsigned line,unsigned col, const std::string
     cairo_fill(cr_);
 }
 
-void FatesDeviceImpl_::invertText(unsigned line) {
+void NuiDeviceImpl_::invertText(unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
     cairo_set_source_rgb (cr_, 1., 1., 1.);
@@ -261,7 +261,7 @@ void FatesDeviceImpl_::invertText(unsigned line) {
     cairo_set_operator (cr_, CAIRO_OPERATOR_OVER);
 }
 
-void FatesDeviceImpl_::clearText(unsigned line) {
+void NuiDeviceImpl_::clearText(unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
     cairo_set_source_rgb(cr_, 0, 0, 0);
@@ -273,7 +273,7 @@ void FatesDeviceImpl_::clearText(unsigned line) {
 }
 
 
-void FatesDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
+void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
 	int img_w, img_h;
 	
 	auto image = cairo_image_surface_create_from_png (filename);
@@ -301,15 +301,15 @@ void FatesDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
 
 
 void *process_gpio_func(void *x) {
-    auto pThis = static_cast<FatesDeviceImpl_ *>(x);
+    auto pThis = static_cast<NuiDeviceImpl_ *>(x);
     pThis->processGPIO();
     return nullptr;
 }
 
 
-void FatesDeviceImpl_::processGPIO() {
+void NuiDeviceImpl_::processGPIO() {
 
-    int encdir[FatesDeviceImpl_::NUM_ENCODERS] = {1, 1, 1,1};
+    int encdir[NuiDeviceImpl_::NUM_ENCODERS] = {1, 1, 1,1};
     clock_t encnow[NUM_ENCODERS];
     clock_t encprev[NUM_ENCODERS];
     encprev[0] = encprev[1] = encprev[2] = encprev[3] = clock();
@@ -347,8 +347,8 @@ void FatesDeviceImpl_::processGPIO() {
                 } else {
                     if (event.type) { // make sure it's not EV_SYN == 0
 //                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
-                        FatesEventMsg msg;
-                        msg.type_ = FatesEventMsg::F_BUTTON;
+                        NuiEventMsg msg;
+                        msg.type_ = NuiEventMsg::N_BUTTON;
                         msg.id_ = event.code-1; // make zerp based
                         msg.value_ = event.value;
                         eventQueue_.enqueue(msg);
@@ -372,8 +372,8 @@ void FatesDeviceImpl_::processGPIO() {
                             if (encdir[n] != event.value && diff > 500) { // only reverse direction if there is reasonable settling time
                                 encdir[n] = event.value;
                             }
-                            FatesEventMsg msg;
-                            msg.type_ = FatesEventMsg::F_ENCODER;
+                            NuiEventMsg msg;
+                            msg.type_ = NuiEventMsg::N_ENCODER;
                             msg.id_ = n;
                             msg.value_ = event.value;
                             eventQueue_.enqueue(msg);
@@ -387,7 +387,7 @@ void FatesDeviceImpl_::processGPIO() {
 }
 
 
-void FatesDeviceImpl_::initGPIO() {
+void NuiDeviceImpl_::initGPIO() {
 
     const char *enc_filenames[NUM_ENCODERS] = {"/dev/input/by-path/platform-soc:knob1-event",
                                                "/dev/input/by-path/platform-soc:knob2-event",
@@ -401,7 +401,7 @@ void FatesDeviceImpl_::initGPIO() {
     gpioThread_ = std::thread(process_gpio_func, this);
 }
 
-void FatesDeviceImpl_::deinitGPIO() {
+void NuiDeviceImpl_::deinitGPIO() {
     keepRunning_=false;
     if(gpioThread_.joinable() ) gpioThread_.join();
 
@@ -411,7 +411,7 @@ void FatesDeviceImpl_::deinitGPIO() {
 
 
 
-void FatesDeviceImpl_::initDisplay() {
+void NuiDeviceImpl_::initDisplay() {
     surfacefb_ = cairo_linuxfb_surface_create();
     crfb_ = cairo_create(surfacefb_);
 
@@ -442,7 +442,7 @@ void FatesDeviceImpl_::initDisplay() {
 
 }
 
-void FatesDeviceImpl_::deinitDisplay() {
+void NuiDeviceImpl_::deinitDisplay() {
     cairo_destroy(cr_);
     cairo_surface_destroy(surface_);
     cairo_destroy(crfb_);
