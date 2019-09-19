@@ -81,6 +81,7 @@ public:
     void displayText(unsigned line, unsigned col, const std::string &str);
     void invertText(unsigned line);
     void clearText(unsigned line);
+    void drawPNG(unsigned x, unsigned y, const char* filename);
 
     // public but not part of interface!
     void processGPIO();
@@ -161,6 +162,9 @@ void FatesDevice::invertText(unsigned line) {
 
 void FatesDevice::clearText(unsigned line) {
     impl_->clearText(line);
+}
+void FatesDevice::drawPNG(unsigned x, unsigned y, const char* filename) {
+    impl_->drawPNG(x,y,filename);
 }
 
 // fwd decl for helper functions
@@ -267,6 +271,25 @@ void FatesDeviceImpl_::clearText(unsigned line) {
     cairo_rectangle(cr_,x,y+1,SCREEN_X,-10);
     cairo_fill(cr_);
 }
+
+
+void FatesDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
+	int img_w, img_h;
+	fprintf(stderr, "loading: %s\n", filename);
+	
+	auto image = cairo_image_surface_create_from_png (filename);
+	if(image == NULL) { return; }
+	
+	img_w = cairo_image_surface_get_width (image);
+	img_h = cairo_image_surface_get_height (image);
+
+	cairo_set_source_surface (cr_, image, x, y);
+	//cairo_paint (cr);
+	cairo_rectangle (cr_, x, y, img_w, img_h);
+	cairo_fill (cr_);
+	cairo_surface_destroy (image);
+}
+
 
 
 //////  ENCODER AND KEY HANDLING //////////////////////////////////////

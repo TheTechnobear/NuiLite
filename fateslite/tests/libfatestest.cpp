@@ -66,7 +66,10 @@ int main(int argc, const char * argv[]) {
 
     signal(SIGINT, intHandler);
     device.displayClear();
-    device.displayText(3,"Hello world");
+
+
+    device.drawPNG(0,0,"./orac.png");
+    //device.displayText(3,"Hello world");
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {

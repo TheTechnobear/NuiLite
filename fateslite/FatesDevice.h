@@ -32,7 +32,7 @@ public:
     void displayText(unsigned line,unsigned col,const std::string& str);
     void invertText(unsigned line);
     void clearText(unsigned line);
-
+    void drawPNG(unsigned x, unsigned y, const char* filename);
 private:
     FatesDeviceImpl_* impl_;
 };
