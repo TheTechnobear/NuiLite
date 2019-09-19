@@ -9,14 +9,10 @@ include_directories (
 
 )
 
-set(TEST1_SRC "rawnuitest.cpp")
-add_executable(rawnuitest ${TEST1_SRC})
-target_link_libraries (rawnuitest nuilite ${LIBCAIRO} pthread )
 
-
-set(TEST2_SRC "libnuitest.cpp")
-add_executable(libnuitest ${TEST2_SRC})
-target_link_libraries (libnuitest nuilite ${LIBCAIRO} pthread )
+set(TEST_SRC "nuitest.cpp")
+add_executable(nuitest ${TEST_SRC})
+target_link_libraries (nuitest nuilite ${LIBCAIRO} pthread )
 
 #if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 #  target_link_libraries(fatestest atomic)

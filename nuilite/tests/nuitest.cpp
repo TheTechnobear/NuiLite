@@ -26,20 +26,19 @@ public:
     void onButton(unsigned id, unsigned value)  override {
 	char buf[100];
         sprintf(buf,"Button %d : %d", id, value);
-	device.clearText(0);
-        device.displayText(0,buf);
+	device.clearText(1);
+        device.displayText(1,buf);
         fprintf(stderr,"button %d : %d\n", id, value);
         if(value) {
             switch(id) {
                 case 0 : {
-			device.clearText(3);
-			device.displayText(3,0,"hello");
-			device.displayText(3,25,"world");
-			device.displayText(4,10,"world");
+			device.clearText(2);
+			device.displayText(2,0,"hello");
+			device.displayText(2,25,"world");
 			break;
 		}
-                case 1 : device.clearText(3); break;
-                case 2 : device.invertText(3); break;
+                case 1 : device.clearText(2); break;
+                case 2 : device.invertText(2); break;
                 default: break;
 
             }
@@ -49,14 +48,24 @@ public:
     void onEncoder(unsigned id, int value) override  {
 	char buf[100];
         sprintf(buf,"Encoder %d : %d ", id, value);
-	device.clearText(1);
-        device.displayText(1,buf);
+	device.clearText(0);
+        device.displayText(0,buf);
         fprintf(stderr,"encoder %d : %d\n", id, value);
     }
 };
 
 
 // note: we are only painting every second to avoid tight loop here 
+void funcParam(unsigned row, unsigned col, const std::string& name, const std::string& value,bool selected=false) {
+    unsigned x = col*64;
+    unsigned y1 = (row+1) * 20;
+    unsigned y2 = y1 + 10;
+    unsigned clr = selected ? 15: 0;
+    device.clearRect(x,y1,62+(col*2),-10,5);
+    device.drawText(x + 1,y1 -1,name,clr);
+    device.clearRect(x,y2,62+(col*2) ,-10,0);
+    device.drawText(x + 1,y2 -1,value,15);
+}
 
 int main(int argc, const char * argv[]) {
     std::cout << "starting test" << std::endl;
@@ -69,7 +78,19 @@ int main(int argc, const char * argv[]) {
 
 
     device.drawPNG(0,0,"./orac.png");
-    //device.displayText(3,"Hello world");
+    device.clearText(0,1);
+    device.displayText(0,0,"a1 : BasicPoly > main",15);
+   
+    /*
+    device.clearRect(0,0, 128,10,1);
+    device.drawText(0,8,"a1 : BasicPoly > main",15);
+    funcParam(0,0,"Transpose","12     st");
+    funcParam(1,0,"Cutoff","15000 hz");
+    funcParam(0,1,"Shape","33",true);
+    funcParam(1,1,"Envelope","58     %");
+
+    */
+
 
     std::cout << "started test" << std::endl;
     while(keepRunning) {

@@ -27,12 +27,18 @@ public:
     void addCallback(std::shared_ptr<NuiCallback>);
 
     void displayClear();
+    // draw funcs
+    void clearRect(unsigned x, unsigned y, unsigned w, unsigned h,  unsigned clr);
+    void drawText(unsigned x, unsigned y, const std::string& str, unsigned clr);
+    void drawPNG(unsigned x, unsigned y, const char* filename);
+    
     // simple text displays
     void displayText(unsigned line,const std::string& str);
     void displayText(unsigned line,unsigned col,const std::string& str);
-    void invertText(unsigned line);
+    void displayText(unsigned line,unsigned col,const std::string& str,unsigned clr);
     void clearText(unsigned line);
-    void drawPNG(unsigned x, unsigned y, const char* filename);
+    void clearText(unsigned line,unsigned clr);
+    void invertText(unsigned line);
 private:
     NuiDeviceImpl_* impl_;
 };
