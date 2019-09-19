@@ -290,6 +290,7 @@ void FatesDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
 	//cairo_paint (cr);
 	cairo_rectangle (cr_, x, y, img_w, img_h);
 	cairo_fill (cr_);
+	cairo_set_source_surface(cr_, surface_, SCREEN_X, SCREEN_Y);
 	cairo_surface_destroy (image);
 }
 
