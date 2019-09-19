@@ -275,10 +275,13 @@ void FatesDeviceImpl_::clearText(unsigned line) {
 
 void FatesDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
 	int img_w, img_h;
-	fprintf(stderr, "loading: %s\n", filename);
 	
 	auto image = cairo_image_surface_create_from_png (filename);
-	if(image == NULL) { return; }
+	if(image == NULL) { 
+		fprintf(stderr, "failed to load: %s\n", filename);
+		return; 
+	}
+	fprintf(stderr, "loaded: %s\n", filename);
 	
 	img_w = cairo_image_surface_get_width (image);
 	img_h = cairo_image_surface_get_height (image);
