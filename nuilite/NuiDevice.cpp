@@ -24,6 +24,7 @@
 #include <linux/input.h>
 #include <time.h>
 #include <sys/poll.h>
+#include <sys/stat.h>
 
 #include <readerwriterqueue.h>
 
@@ -80,6 +81,9 @@ public:
     void stop();
     unsigned process();
     void addCallback(std::shared_ptr<NuiCallback>);
+
+    unsigned numEncoders();
+
 
     void displayClear();
     
@@ -150,6 +154,11 @@ void NuiDevice::addCallback(std::shared_ptr<NuiCallback> cb) {
     impl_->addCallback(cb);
 
 }
+
+unsigned NuiDevice::numEncoders() {
+    return impl_->numEncoders();
+}
+
 
 void NuiDevice::displayClear() {
     impl_->displayClear();
@@ -247,6 +256,14 @@ unsigned NuiDeviceImpl_::process() {
    }
     displayPaint();
     return 0;
+}
+
+unsigned  NuiDeviceImpl_::numEncoders() {
+    struct stat fs;
+    if((stat ("/dev/input/by-path/platform-soc:knob4-event", &fs) == 0)) {
+        return 4;
+    }
+    return 3;
 }
 
 

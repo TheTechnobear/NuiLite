@@ -26,6 +26,8 @@ public:
     unsigned process();
     void addCallback(std::shared_ptr<NuiCallback>);
 
+    unsigned numEncoders();
+
     void displayClear();
     // draw funcs
     void clearRect(unsigned x, unsigned y, unsigned w, unsigned h,  unsigned clr);
