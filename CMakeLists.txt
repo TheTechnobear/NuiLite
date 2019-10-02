@@ -80,4 +80,5 @@ add_subdirectory(external/moodycamel moodycamel)
 
 
 add_subdirectory(nuilite)
+add_subdirectory(sidekick)
 
