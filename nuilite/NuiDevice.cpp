@@ -55,10 +55,10 @@
 static cairo_font_face_t *ct[NUM_FONTS];
 
 static float colours[16] =
-{0.0f, 0.066666666666667f, 0.13333333333333f, 0.2f, 0.26666666666667f,
- 0.33333333333333f,
- 0.4f, 0.46666666666667f, 0.53333333333333f, 0.6f, 0.66666666666667f,
- 0.73333333333333f, 0.8f, 0.86666666666667f, 0.93333333333333f, 1.0f};
+    {0.0f, 0.066666666666667f, 0.13333333333333f, 0.2f, 0.26666666666667f,
+     0.33333333333333f,
+     0.4f, 0.46666666666667f, 0.53333333333333f, 0.6f, 0.66666666666667f,
+     0.73333333333333f, 0.8f, 0.86666666666667f, 0.93333333333333f, 1.0f};
 
 namespace NuiLite {
 
@@ -74,7 +74,7 @@ struct NuiEventMsg {
 // implementation class
 class NuiDeviceImpl_ {
 public:
-    NuiDeviceImpl_(const char* resPath);
+    NuiDeviceImpl_(const char *resPath);
     ~NuiDeviceImpl_();
 
     void start();
@@ -86,16 +86,16 @@ public:
 
 
     void displayClear();
-    
+
     // text functions 
-    void displayText(unsigned line, unsigned col,const std::string &str,unsigned clr);
-    void clearText(unsigned line,unsigned clr);
+    void displayText(unsigned line, unsigned col, const std::string &str, unsigned clr);
+    void clearText(unsigned line, unsigned clr);
     void invertText(unsigned line);
 
     // draw functions
-    void clearRect(unsigned x, unsigned y, unsigned w, unsigned h,  unsigned clr);
-    void drawText(unsigned x, unsigned y, const std::string& str, unsigned clr);
-    void drawPNG(unsigned x, unsigned y, const char* filename);
+    void clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr);
+    void drawText(unsigned x, unsigned y, const std::string &str, unsigned clr);
+    void drawPNG(unsigned x, unsigned y, const char *filename);
 
     // public but not part of interface!
     void processGPIO();
@@ -127,7 +127,7 @@ private:
 };
 
 //NuiDevice proxy
-NuiDevice::NuiDevice(const char* resPath) {
+NuiDevice::NuiDevice(const char *resPath) {
     impl_ = new NuiDeviceImpl_(resPath);
 }
 
@@ -164,40 +164,40 @@ void NuiDevice::displayClear() {
     impl_->displayClear();
 }
 
-void NuiDevice::displayText(unsigned line, unsigned col,const std::string &str,unsigned clr) {
-    impl_->displayText(line,col,str,clr);
+void NuiDevice::displayText(unsigned line, unsigned col, const std::string &str, unsigned clr) {
+    impl_->displayText(line, col, str, clr);
 }
 
-void NuiDevice::displayText(unsigned line, unsigned col,const std::string &str) {
-    impl_->displayText(line,col,str,15);
+void NuiDevice::displayText(unsigned line, unsigned col, const std::string &str) {
+    impl_->displayText(line, col, str, 15);
 }
 
 void NuiDevice::displayText(unsigned line, const std::string &str) {
-    impl_->displayText(line,0,str,15);
+    impl_->displayText(line, 0, str, 15);
 }
 
 void NuiDevice::invertText(unsigned line) {
     impl_->invertText(line);
 }
 
-void NuiDevice::clearText(unsigned line,unsigned clr) {
-    impl_->clearText(line,clr);
+void NuiDevice::clearText(unsigned line, unsigned clr) {
+    impl_->clearText(line, clr);
 }
 
 void NuiDevice::clearText(unsigned line) {
-    impl_->clearText(line,0);
+    impl_->clearText(line, 0);
 }
 
-void NuiDevice::drawPNG(unsigned x, unsigned y, const char* filename) {
-    impl_->drawPNG(x,y,filename);
+void NuiDevice::drawPNG(unsigned x, unsigned y, const char *filename) {
+    impl_->drawPNG(x, y, filename);
 }
 
-void NuiDevice::clearRect(unsigned x, unsigned y, unsigned w, unsigned h,  unsigned clr) {
-    impl_->clearRect(x,y,w,h,clr);
+void NuiDevice::clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr) {
+    impl_->clearRect(x, y, w, h, clr);
 }
 
-void NuiDevice::drawText(unsigned x, unsigned y, const std::string& str, unsigned clr){
-    impl_->drawText(x,y,str,clr);
+void NuiDevice::drawText(unsigned x, unsigned y, const std::string &str, unsigned clr) {
+    impl_->drawText(x, y, str, clr);
 }
 
 
@@ -205,14 +205,14 @@ void NuiDevice::drawText(unsigned x, unsigned y, const std::string& str, unsigne
 extern void cairo_linuxfb_surface_destroy(void *device);
 extern cairo_surface_t *cairo_linuxfb_surface_create();
 extern int opengpio(const char *pathname, int flags);
-void setup_local_fonts(const char*);
+void setup_local_fonts(const char *);
 
 
 //// start of IMPLEMENTATION
 
 
-NuiDeviceImpl_::NuiDeviceImpl_(const char* resPath)  : eventQueue_(MAX_EVENTS), resPath_(resPath==nullptr ? "" : resPath){
-    if(resPath_.size()==0) resPath_="/home/we/norns/resources";
+NuiDeviceImpl_::NuiDeviceImpl_(const char *resPath) : eventQueue_(MAX_EVENTS), resPath_(resPath == nullptr ? "" : resPath) {
+    if (resPath_.size() == 0) resPath_ = "/home/we/norns/resources";
 }
 
 NuiDeviceImpl_::~NuiDeviceImpl_() {
@@ -239,28 +239,27 @@ void NuiDeviceImpl_::stop() {
 unsigned NuiDeviceImpl_::process() {
     NuiEventMsg msg;
     while (eventQueue_.try_dequeue(msg)) {
-        for(auto cb: callbacks_) {
-            switch(msg.type_) {
+        for (auto cb: callbacks_) {
+            switch (msg.type_) {
                 case NuiEventMsg::N_BUTTON : {
-                    cb->onButton(msg.id_,msg.value_);
+                    cb->onButton(msg.id_, msg.value_);
                     break;
                 }
                 case NuiEventMsg::N_ENCODER : {
-                    cb->onEncoder(msg.id_,msg.value_);
+                    cb->onEncoder(msg.id_, msg.value_);
                     break;
                 }
-                default:
-                    ; // ignore
+                default:; // ignore
             }
         }
-   }
+    }
     displayPaint();
     return 0;
 }
 
-unsigned  NuiDeviceImpl_::numEncoders() {
+unsigned NuiDeviceImpl_::numEncoders() {
     struct stat fs;
-    if((stat ("/dev/input/by-path/platform-soc:knob4-event", &fs) == 0)) {
+    if ((stat("/dev/input/by-path/platform-soc:knob4-event", &fs) == 0)) {
         return 4;
     }
     return 3;
@@ -274,20 +273,19 @@ void NuiDeviceImpl_::displayPaint() {
 
 }
 
-void NuiDeviceImpl_::clearRect(unsigned x, unsigned y, unsigned w, unsigned h,  unsigned clr) {
-    cairo_set_source_rgb(cr_, colours[clr],colours[clr],colours[clr]); 
-    cairo_rectangle(cr_,x,y,w,h);
+void NuiDeviceImpl_::clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_rectangle(cr_, x, y, w, h);
     cairo_fill(cr_);
 }
 
 
-void NuiDeviceImpl_::drawText(unsigned x, unsigned y, const std::string& str, unsigned clr) {
-    cairo_set_source_rgb(cr_, colours[clr],colours[clr],colours[clr]); 
+void NuiDeviceImpl_::drawText(unsigned x, unsigned y, const std::string &str, unsigned clr) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
 }
-
 
 
 void NuiDeviceImpl_::displayClear() {
@@ -297,14 +295,14 @@ void NuiDeviceImpl_::displayClear() {
 }
 
 void NuiDeviceImpl_::displayText(
-	unsigned line,unsigned col, 
-	const std::string &str,
-	unsigned clr
-	) {
+    unsigned line, unsigned col,
+    const std::string &str,
+    unsigned clr
+) {
     unsigned x = col * 4;
     unsigned y = line * 10 + 10;
 
-    cairo_set_source_rgb(cr_, colours[clr],colours[clr],colours[clr]); 
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
@@ -313,44 +311,44 @@ void NuiDeviceImpl_::displayText(
 void NuiDeviceImpl_::invertText(unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
-    cairo_set_source_rgb (cr_, 1., 1., 1.);
-    cairo_set_operator (cr_, CAIRO_OPERATOR_DIFFERENCE);
-    cairo_rectangle(cr_,x,y+1,SCREEN_X,-10);
+    cairo_set_source_rgb(cr_, 1., 1., 1.);
+    cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
+    cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
     cairo_fill(cr_);
-    cairo_set_operator (cr_, CAIRO_OPERATOR_OVER);
+    cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void NuiDeviceImpl_::clearText(unsigned line,unsigned clr) {
+void NuiDeviceImpl_::clearText(unsigned line, unsigned clr) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
-    cairo_set_source_rgb(cr_, colours[clr],colours[clr],colours[clr]); 
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
 //    cairo_text_extents_t extents;
 //    cairo_text_extents (cr_, "0", &extents);
 //    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
-    cairo_rectangle(cr_,x,y+1,SCREEN_X,-10);
+    cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
     cairo_fill(cr_);
 }
 
 
-void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename){
-	int img_w, img_h;
-	
-	auto image = cairo_image_surface_create_from_png (filename);
-	if(image == NULL) { 
-		fprintf(stderr, "failed to load: %s\n", filename);
-		return; 
-	}
-	fprintf(stderr, "loaded: %s\n", filename);
-	
-	img_w = cairo_image_surface_get_width (image);
-	img_h = cairo_image_surface_get_height (image);
+void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename) {
+    int img_w, img_h;
 
-	cairo_set_source_surface (cr_, image, x, y);
-	//cairo_paint (cr);
-	cairo_rectangle (cr_, x, y, img_w, img_h);
-	cairo_fill (cr_);
-	cairo_set_source_surface(cr_, surface_, SCREEN_X, SCREEN_Y);
-	cairo_surface_destroy (image);
+    auto image = cairo_image_surface_create_from_png(filename);
+    if (image == NULL) {
+        fprintf(stderr, "failed to load: %s\n", filename);
+        return;
+    }
+    fprintf(stderr, "loaded: %s\n", filename);
+
+    img_w = cairo_image_surface_get_width(image);
+    img_h = cairo_image_surface_get_height(image);
+
+    cairo_set_source_surface(cr_, image, x, y);
+    //cairo_paint (cr);
+    cairo_rectangle(cr_, x, y, img_w, img_h);
+    cairo_fill(cr_);
+    cairo_set_source_surface(cr_, surface_, SCREEN_X, SCREEN_Y);
+    cairo_surface_destroy(image);
 }
 
 
@@ -368,7 +366,7 @@ void *process_gpio_func(void *x) {
 
 void NuiDeviceImpl_::processGPIO() {
 
-    int encdir[NuiDeviceImpl_::NUM_ENCODERS] = {1, 1, 1,1};
+    int encdir[NuiDeviceImpl_::NUM_ENCODERS] = {1, 1, 1, 1};
     clock_t encnow[NUM_ENCODERS];
     clock_t encprev[NUM_ENCODERS];
     encprev[0] = encprev[1] = encprev[2] = encprev[3] = clock();
@@ -408,7 +406,7 @@ void NuiDeviceImpl_::processGPIO() {
 //                        fprintf(stderr, "button %d = %d\n", event.code, event.value);
                         NuiEventMsg msg;
                         msg.type_ = NuiEventMsg::N_BUTTON;
-                        msg.id_ = event.code-1; // make zerp based
+                        msg.id_ = event.code - 1; // make zerp based
                         msg.value_ = event.value;
                         eventQueue_.enqueue(msg);
                     }
@@ -461,8 +459,8 @@ void NuiDeviceImpl_::initGPIO() {
 }
 
 void NuiDeviceImpl_::deinitGPIO() {
-    keepRunning_=false;
-    if(gpioThread_.joinable() ) gpioThread_.join();
+    keepRunning_ = false;
+    if (gpioThread_.joinable()) gpioThread_.join();
 
 }
 
@@ -488,11 +486,11 @@ void NuiDeviceImpl_::initDisplay() {
     cairo_paint(crfb_);
 
     cairo_font_options_t *font_options = cairo_font_options_create();
-    cairo_font_options_set_antialias(font_options,CAIRO_ANTIALIAS_SUBPIXEL);
+    cairo_font_options_set_antialias(font_options, CAIRO_ANTIALIAS_SUBPIXEL);
     cairo_set_font_options(cr_, font_options);
     cairo_font_options_destroy(font_options);
 
-    cairo_set_font_face (cr_, ct[0]);
+    cairo_set_font_face(cr_, ct[0]);
 
     //cairo_select_font_face(cr_, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr_, 8.0);
@@ -628,14 +626,13 @@ cairo_surface_t *cairo_linuxfb_surface_create() {
 static char font_path[NUM_FONTS][32];
 
 
-
-void setup_local_fonts(const char* resPath) {
+void setup_local_fonts(const char *resPath) {
     static FT_Library value;
     static FT_Error status;
     static FT_Face face[NUM_FONTS];
 
     status = FT_Init_FreeType(&value);
-    if(status != 0) {
+    if (status != 0) {
         fprintf(stderr, "ERROR (screen) freetype init\n");
         return;
     }
@@ -716,21 +713,20 @@ void setup_local_fonts(const char* resPath) {
 
     //fprintf(stderr, "fonts: \n");
     //for (int i=0; i<NUM_FONTS; ++i) {
-     // fprintf(stderr, "  %d: %s\n", i, font_path[i]);
+    // fprintf(stderr, "  %d: %s\n", i, font_path[i]);
     //}
-    
+
     char filename[256];
 
-    for(int i = 0; i < NUM_FONTS; i++) {
+    for (int i = 0; i < NUM_FONTS; i++) {
         // FIXME should be path relative to norns/
         snprintf(filename, 256, "%s/%s", resPath, font_path[i]);
 
         status = FT_New_Face(value, filename, 0, &face[i]);
-        if(status != 0) {
+        if (status != 0) {
             fprintf(stderr, "ERROR (screen) font load: %s\n", filename);
             return;
-        }
-        else{
+        } else {
             ct[i] = cairo_ft_font_face_create_for_ft_face(face[i], 0);
         }
     }
