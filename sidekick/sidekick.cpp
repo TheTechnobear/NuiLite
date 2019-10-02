@@ -1,16 +1,25 @@
 #include "NuiDevice.h"
-#include <iostream>
 #include <unistd.h>
-#include <iomanip>
 #include <signal.h>
+
+#include <dirent.h>
+#include <sys/stat.h>
+
+#include <vector>
+#include <iostream>
+#include <iomanip>
+
 
 static volatile bool keepRunning = 1;
 
+static unsigned POLL_MS=1;
+static int activeCount=-1;
+static unsigned ACTIVE_TIME= 5000; //5000 mSec
 
 NuiLite::NuiDevice device;
 
 void intHandler(int dummy) {
-    std::cerr << "LibNuiTest intHandler called" << std::endl;
+    std::cerr << "Sidekick intHandler called" << std::endl;
     if(!keepRunning) {
         sleep(1);
         exit(-1);
@@ -19,85 +28,181 @@ void intHandler(int dummy) {
     device.stop();
 }
 
+static bool sidekickActive_=false;
+static int selIdx_=0;
+
+struct MenuItem {
+    MenuItem(const std::string& n) : name_(n) { ; }
+    std::string name_;
+};
 
 
-class TestCallback : public NuiLite::NuiCallback {
+std::vector<std::shared_ptr<MenuItem>> mainMenu;
+
+std::string patchDir="./patches";
+
+int  execShell(const std::string& cmd) {
+    return system(cmd.c_str());
+}
+
+
+void runScript(const std::string& name,const std::string&  cmd) {
+    std::string shcmd = patchDir + "/" + name +"/" + cmd + " &";
+    std::cout << "running : " << shcmd << std::endl;
+    execShell(shcmd);
+}
+
+
+int checkFileExists (const std::string& filename) {
+    struct stat st;
+    int result = stat(filename.c_str(), &st);
+    return result == 0;
+}
+
+void displayMenu() {
+    device.displayClear();
+    int line=0;
+    for(auto mi : mainMenu) {
+        device.displayText(line,mi->name_);
+        line++;
+        if(line>5) break;
+    }
+    device.invertText(selIdx_);
+}
+
+
+void activateItem() {
+    try {
+        auto item=mainMenu.at(selIdx_);
+        device.displayClear();
+        device.displayText(0,"Launch...");
+        device.displayText(1,item->name_);
+        std::cerr << "launch : " << item->name_ << std::endl;
+        sleep(1);
+        sidekickActive_=false;
+        std::string runFile=patchDir+"/"+item->name_+"/run.sh";
+        if(checkFileExists(runFile)) {
+            runScript(item->name_,"run.sh");
+        }
+
+    } catch(std::out_of_range) {
+    }
+}
+
+class SKCallback : public NuiLite::NuiCallback {
 public:
-    void onButton(unsigned id, unsigned value)  override {
-	char buf[100];
-        sprintf(buf,"Button %d : %d", id, value);
-	device.clearText(1);
-        device.displayText(1,buf);
-        fprintf(stderr,"button %d : %d\n", id, value);
-        if(value) {
-            switch(id) {
-                case 0 : {
-			device.clearText(2);
-			device.displayText(2,0,"hello");
-			device.displayText(2,25,"world");
-			break;
-		}
-                case 1 : device.clearText(2); break;
-                case 2 : device.invertText(2); break;
-                default: break;
+    void init() {
+        selIdx_=0;
+        sidekickActive_=false;
 
+
+        struct dirent **namelist;
+        std::setlocale(LC_ALL, "en_US.UTF-8");
+
+        int n = scandir(patchDir.c_str(), &namelist, NULL, alphasort);
+
+        for (int i = 0; i < n; i++) {
+            char* fname = namelist[i]->d_name;
+            if (fname[0]!='.') {
+                switch(namelist[i]->d_type) {
+                case DT_DIR : {
+                    std::string patchlocation = patchDir + "/" + fname;
+                    std::string mainpd = patchlocation + "/main.pd";
+                    std::string shellfile = patchlocation + "/run.sh";
+                    if (     checkFileExists(mainpd)
+                             ||  checkFileExists(shellfile)
+                       ) {
+                        auto menuItem=std::make_shared<MenuItem>(fname);
+                        mainMenu.push_back(menuItem);
+                    }
+                    break;
+                } //DT_DIR
+                case DT_REG: {
+                    break;
+                } //DT_REG
+                default:
+                    break;
+
+                }// switch
             }
+            free(namelist[i]);
+        }
+        free(namelist);
+    }
+
+    void onButton(unsigned id, unsigned value)  override {
+        buttonState_[id]=value;
+        if(!sidekickActive_) {
+            bool all3=true;
+            for(int i=0;i<3;i++) {
+                all3 = all3 & buttonState_[i];
+            }
+
+            if(all3) {
+                activeCount=ACTIVE_TIME;
+            } else {
+                activeCount=-1;
+            }
+        } else if(id==0 && value) {
+                std::cerr << "Sidekick launch " << std::endl;
+                activateItem();
         }
     }
 
     void onEncoder(unsigned id, int value) override  {
-	char buf[100];
-        sprintf(buf,"Encoder %d : %d ", id, value);
-	device.clearText(0);
-        device.displayText(0,buf);
-        fprintf(stderr,"encoder %d : %d\n", id, value);
+        if(!sidekickActive_) return;
+        if(id==0) {
+            if(value>0) {
+                selIdx_++;
+                selIdx_ = selIdx_>maxItems_ ? maxItems_ : selIdx_;
+                selIdx_ = selIdx_>mainMenu.size()-1 ? mainMenu.size()-1 : selIdx_;
+            } else if (value < 0) {
+                selIdx_--;
+                selIdx_ = selIdx_<0 ? 0 : selIdx_;
+            }
+        }
+        displayMenu();
     }
+
+
+private:
+    unsigned buttonState_[4] = {false,false,false,false};
+    unsigned maxItems_=5;
 };
 
 
-// note: we are only painting every second to avoid tight loop here 
-void funcParam(unsigned row, unsigned col, const std::string& name, const std::string& value,bool selected=false) {
-    unsigned x = col*64;
-    unsigned y1 = (row+1) * 20;
-    unsigned y2 = y1 + 10;
-    unsigned clr = selected ? 15: 0;
-    device.clearRect(x,y1,62+(col*2),-10,5);
-    device.drawText(x + 1,y1 -1,name,clr);
-    device.clearRect(x,y2,62+(col*2) ,-10,0);
-    device.drawText(x + 1,y2 -1,value,15);
-}
-
 int main(int argc, const char * argv[]) {
-    std::cout << "starting test" << std::endl;
-    device.addCallback(std::make_shared<TestCallback>());
+    std::cout << "starting sidekick" << std::endl;
+    auto cb = std::make_shared<SKCallback>();
+    cb->init();
+    device.addCallback(cb);
 
     device.start();
 
     signal(SIGINT, intHandler);
-    device.displayClear();
 
-
-    device.drawPNG(0,0,"./orac.png");
-    device.clearText(0,1);
-    device.displayText(0,0,"a1 : BasicPoly > main",15);
-   
-    /*
-    device.clearRect(0,0, 128,10,1);
-    device.drawText(0,8,"a1 : BasicPoly > main",15);
-    funcParam(0,0,"Transpose","12     st");
-    funcParam(1,0,"Cutoff","15000 hz");
-    funcParam(0,1,"Shape","33",true);
-    funcParam(1,1,"Envelope","58     %");
-
-    */
-
-
-    std::cout << "started test" << std::endl;
     while(keepRunning) {
-        device.process();
-        sleep(1);
+        device.process(sidekickActive_);
+        if(activeCount>0) {
+            activeCount--;
+            if(activeCount<=0) {
+                activeCount=-1;
+                sidekickActive_=true;
+                if(sidekickActive_) {
+                    std::cerr << "Sidekick activated,stop processes" << std::endl;
+                    displayMenu();
+                    for(auto mi:mainMenu) {
+                        std::string stopfile = patchDir+"/" + mi->name_+"/stop.sh";
+                        if(checkFileExists(stopfile)) {
+                            runScript(mi->name_,"stop.sh");
+                        }
+                    }
+                }
+            }
+        }
+        usleep(POLL_MS*1000);
     }
-    std::cout << "stopping test" << std::endl;
+    std::cout << "stopping sidekick" << std::endl;
     device.stop();
     return 0;
 }

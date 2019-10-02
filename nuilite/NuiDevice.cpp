@@ -79,13 +79,14 @@ public:
 
     void start();
     void stop();
-    unsigned process();
+    unsigned process(bool);
     void addCallback(std::shared_ptr<NuiCallback>);
 
     unsigned numEncoders();
 
 
     void displayClear();
+    void displayPaint();
 
     // text functions 
     void displayText(unsigned line, unsigned col, const std::string &str, unsigned clr);
@@ -106,7 +107,6 @@ private:
     void initDisplay();
     void deinitDisplay();
 
-    void displayPaint();
 
 
     std::string resPath_;
@@ -146,8 +146,8 @@ void NuiDevice::stop() {
     impl_->stop();
 }
 
-unsigned NuiDevice::process() {
-    return impl_->process();
+unsigned NuiDevice::process(bool paint) {
+    return impl_->process(paint);
 }
 
 void NuiDevice::addCallback(std::shared_ptr<NuiCallback> cb) {
@@ -162,6 +162,10 @@ unsigned NuiDevice::numEncoders() {
 
 void NuiDevice::displayClear() {
     impl_->displayClear();
+}
+
+void NuiDevice::displayPaint() {
+    impl_->displayPaint();
 }
 
 void NuiDevice::displayText(unsigned line, unsigned col, const std::string &str, unsigned clr) {
@@ -236,7 +240,7 @@ void NuiDeviceImpl_::stop() {
     deinitGPIO();
 }
 
-unsigned NuiDeviceImpl_::process() {
+unsigned NuiDeviceImpl_::process(bool paint) {
     NuiEventMsg msg;
     while (eventQueue_.try_dequeue(msg)) {
         for (auto cb: callbacks_) {
@@ -253,7 +257,7 @@ unsigned NuiDeviceImpl_::process() {
             }
         }
     }
-    displayPaint();
+    if(paint) displayPaint();
     return 0;
 }
 

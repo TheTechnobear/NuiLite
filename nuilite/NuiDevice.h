@@ -25,12 +25,13 @@ public:
 
     void start();
     void stop();
-    unsigned process();
+    unsigned process(bool paint=true);
     void addCallback(std::shared_ptr<NuiCallback>);
 
     unsigned numEncoders();
 
     void displayClear();
+    void displayPaint();
     // draw funcs
     void clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr);
     void drawText(unsigned x, unsigned y, const std::string &str, unsigned clr);
