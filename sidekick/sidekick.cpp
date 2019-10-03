@@ -16,7 +16,7 @@ std::shared_ptr<SKApp> app_ = nullptr;
 void intHandler(int) {
     std::cerr << "Sidekick intHandler called" << std::endl;
     if (!keepRunning) {
-        sleep(1);
+        sleep(2);
         exit(-1);
     }
     if (app_ != nullptr) app_->stop();
@@ -26,11 +26,9 @@ void intHandler(int) {
 int main(int argc, const char *argv[]) {
     std::cout << "starting sidekick" << std::endl;
     signal(SIGINT, intHandler);
-    app_ = std::make_shared<SKApp>(keepRunning);
+    app_ = std::make_shared<SKApp>();
     app_->init();
     app_->run();
-
-
     std::cout << "stopping sidekick" << std::endl;
     return 0;
 }

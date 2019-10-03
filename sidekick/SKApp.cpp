@@ -12,7 +12,10 @@
 #include <clocale>
 
 
-SKApp::SKApp() : sidekickActive_(false), selIdx_(0) {
+SKApp::SKApp() : 
+    sidekickActive_(false), 
+    selIdx_(0),
+    keepRunning_(true) {
 
 }
 
@@ -20,6 +23,7 @@ void SKApp::init() {
     auto cb = std::make_shared<SKCallback>(*this);
     selIdx_ = 0;
     sidekickActive_ = false;
+    keepRunning_ = true;
 
 
     struct dirent **namelist;
@@ -64,6 +68,7 @@ void SKApp::init() {
 }
 
 void SKApp::stop() {
+    //std::cerr << "SKApp::stop" << std::endl;
     keepRunning_ = false;
 }
 
@@ -90,6 +95,7 @@ void SKApp::run() {
         }
         usleep(POLL_MS * 1000);
     }
+    //std::cerr << "SKApp::run end" << std::endl;
     device_.stop();
 }
 
@@ -165,12 +171,9 @@ void SKApp::onEncoder(unsigned id, int value) {
     if (!sidekickActive_) return;
     if (id == 0) {
         if (value > 0) {
-            selIdx_++;
-            selIdx_ = selIdx_ > maxItems_ ? maxItems_ : selIdx_;
-            selIdx_ = selIdx_ > mainMenu_.size() - 1 ? (unsigned) mainMenu_.size() - 1 : selIdx_;
+            if(selIdx_ < maxItems_ && selIdx_ < (mainMenu_.size() -1)) selIdx_++;
         } else if (value < 0) {
-            selIdx_--;
-            selIdx_ = selIdx_ < 0 ? 0 : selIdx_;
+            if(selIdx_ > 0) selIdx_--;
         }
     }
     displayMenu();
