@@ -10,7 +10,7 @@ include_directories (
 )
 
 
-set(SK_SRC "sidekick.cpp")
+set(SK_SRC "sidekick.cpp" SKApp.cpp SKApp.h SKCallback.cpp SKCallback.h)
 add_executable(sidekick ${SK_SRC})
 target_link_libraries (sidekick nuilite ${LIBCAIRO} pthread )
 
