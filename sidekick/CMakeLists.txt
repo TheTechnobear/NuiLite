@@ -3,7 +3,7 @@ project(sidekick)
 find_path(LIBCAIRO_INC NAME cairo.h PATHS /usr/include/cairo /usr/local/include/cairo)
 find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib)
 
-include_directories (
+include_directories(
         "${PROJECT_SOURCE_DIR}/../nuilite"
         ${LIBCAIRO_INC}
 
@@ -12,5 +12,5 @@ include_directories (
 
 set(SK_SRC "sidekick.cpp" SKApp.cpp SKApp.h SKCallback.cpp SKCallback.h)
 add_executable(sidekick ${SK_SRC})
-target_link_libraries (sidekick nuilite ${LIBCAIRO} pthread )
+target_link_libraries(sidekick nuilite ${LIBCAIRO} pthread)
 

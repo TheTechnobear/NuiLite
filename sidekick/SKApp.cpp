@@ -64,7 +64,7 @@ void SKApp::init() {
 }
 
 void SKApp::stop() {
-    keepRunning_=false;
+    keepRunning_ = false;
 }
 
 

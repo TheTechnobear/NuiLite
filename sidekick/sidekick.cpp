@@ -10,22 +10,20 @@ static volatile bool keepRunning = true;
 
 class SKApp;
 
-std::shared_ptr<SKApp> app_= nullptr;
+std::shared_ptr<SKApp> app_ = nullptr;
 
 
 void intHandler(int) {
     std::cerr << "Sidekick intHandler called" << std::endl;
-    if(!keepRunning) {
+    if (!keepRunning) {
         sleep(1);
         exit(-1);
     }
-    if(app_!= nullptr) app_->stop();
+    if (app_ != nullptr) app_->stop();
 }
 
 
-
-
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
     std::cout << "starting sidekick" << std::endl;
     signal(SIGINT, intHandler);
     app_ = std::make_shared<SKApp>(keepRunning);
