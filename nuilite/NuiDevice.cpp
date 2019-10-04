@@ -82,6 +82,7 @@ public:
     unsigned process(bool);
     void addCallback(std::shared_ptr<NuiCallback>);
 
+    bool buttonState(unsigned but);
     unsigned numEncoders();
 
 
@@ -153,6 +154,10 @@ unsigned NuiDevice::process(bool paint) {
 void NuiDevice::addCallback(std::shared_ptr<NuiCallback> cb) {
     impl_->addCallback(cb);
 
+}
+
+bool NuiDevice::buttonState(unsigned but) {
+    return impl_->buttonState( but);
 }
 
 unsigned NuiDevice::numEncoders() {
@@ -260,6 +265,17 @@ unsigned NuiDeviceImpl_::process(bool paint) {
     if(paint) displayPaint();
     return 0;
 }
+
+
+bool NuiDeviceImpl_::buttonState(unsigned but) {
+    FILE *kbd = fopen("/dev/input/by-path/platform-keys-event","r");
+    if(kbd== nullptr) return false;
+    char key=0;
+    ioctl(fileno(kbd), EVIOCGKEY(1), &key);
+    fclose(kbd);
+    return ((unsigned) key) & (1 << but);
+}
+
 
 unsigned NuiDeviceImpl_::numEncoders() {
     struct stat fs;

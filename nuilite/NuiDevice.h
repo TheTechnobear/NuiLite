@@ -28,6 +28,7 @@ public:
     unsigned process(bool paint=true);
     void addCallback(std::shared_ptr<NuiCallback>);
 
+    bool buttonState(unsigned but);
     unsigned numEncoders();
 
     void displayClear();

@@ -90,8 +90,14 @@ int main(int argc, const char * argv[]) {
 
     */
 
-
     std::cout << "started test" << std::endl;
+
+    std::cout << "buttons : "
+              << device.buttonState(0)
+              << device.buttonState(1)
+              << device.buttonState(2)
+              << std::endl;
+
     while(keepRunning) {
         device.process();
         sleep(1);
