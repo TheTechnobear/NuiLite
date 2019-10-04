@@ -28,6 +28,7 @@ void SKApp::init(SKPrefs &prefs) {
     selIdx_ = 0;
     sidekickActive_ = false;
     keepRunning_ = true;
+    activeCount_ = -1;
 
     // load preferences
     patchDir_ = prefs.getString("patchDir", "./patches");
@@ -35,8 +36,24 @@ void SKApp::init(SKPrefs &prefs) {
     POLL_MS_ = (unsigned) prefs.getInt("pollTime", 1);
     loadOnStartup_ = prefs.getBool("loadOnStartup", true);
     stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
-    startupTime_ = prefs.getInt("startupTime_", 10);
+    startupTime_ = prefs.getInt("startupTime", 10);
     startupCount_ = startupTime_;
+
+    if(loadOnStartup_) {
+        SKPrefs stat(stateFile_);
+        if(!stat.valid()){
+            std::cerr << "state file invalid , bring up menu" << std::endl;
+            startupCount_=-1;
+            activeCount_ = 1;
+        } else {
+            lastPatch_ = stat.getString("lastPatch", "");
+            if(lastPatch_.length()==0) {
+                std::cerr << "no last patch, bring up menu" << std::endl;
+                startupCount_=-1;
+                activeCount_ = 1;
+            }
+        }
+    }
 
     struct dirent **namelist;
     std::setlocale(LC_ALL, "en_US.UTF-8");
@@ -88,26 +105,21 @@ void SKApp::stop() {
 void SKApp::run() {
     while (keepRunning_) {
         device_.process(sidekickActive_);
+
         if (startupCount_ >= 0) {
             startupCount_--;
             if (loadOnStartup_ && startupCount_ == 0) {
+                std::cerr << "startup completed" << std::endl;
                 startupCount_ = -1;
                 bool loaded = false;
-                if (stateFile_.length() > 0) {
-                    SKPrefs prefs(stateFile_);
-                    lastPatch_ = prefs.getString("lastPatch", "");
-                    if (lastPatch_.length() > 0) {
-                        std::string patchlocation = patchDir_ + "/" + lastPatch_;
-                        std::string shellfile = patchlocation + "/run.sh";
-//                        std::string mainpd = patchlocation + "/main.pd";
-                        if (checkFileExists(shellfile)) {
-                            runScript(lastPatch_, "run.sh");
-                            loaded = true;
-                        }
-//                        else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
-                    }
-
+                std::string patchlocation = patchDir_ + "/" + lastPatch_;
+                std::string shellfile = patchlocation + "/run.sh";
+//              std::string mainpd = patchlocation + "/main.pd";
+                if (checkFileExists(shellfile)) {
+                    runScript(lastPatch_, "run.sh");
+                    loaded = true;
                 }
+//              else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
 
                 if (loaded) {
                     unsigned idx = 0;
@@ -120,7 +132,7 @@ void SKApp::run() {
                     }
                 } else {
                     // bring up menu if we could not load patch
-                    sidekickActive_ = true;
+                    activeCount_ = 1;
                 }
             }
         } else if (activeCount_ > 0) {
@@ -217,10 +229,13 @@ void SKApp::saveState() {
 
 void SKApp::onButton(unsigned id, unsigned value) {
     buttonState_[id] = (bool) value;
+    std::cerr << "but " << id << ":" << value << std::endl;
     if (!sidekickActive_) {
+        std::cerr << "!sa but " << id << ":" << value << std::endl;
         if (startupCount_ > 0 && id == 0 && value) {
+            std::cerr << "but 1 pressed during startup, force sidekick menu" << std::endl;
             startupCount_ = -1; // prevent happening again and also autoloading of previous patch
-            sidekickActive_ = true;
+            activeCount_ = 1; // will make active on next loop
             return;
         }
 

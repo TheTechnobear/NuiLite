@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <iostream>
 
 #include <unistd.h>
 #include <signal.h>
@@ -25,8 +26,8 @@ void intHandler(int) {
 
 
 int main(int argc, const char *argv[]) {
-    SKPrefs prefs;
-    if (!prefs.loadPreferences(std::string("./sidekick.json"))) {
+    SKPrefs prefs("./sidekick.json");
+    if (!prefs.valid()) {
         std::cerr << "./sidekick.json preferences file cannot be loaded";
         return -1;
     }
