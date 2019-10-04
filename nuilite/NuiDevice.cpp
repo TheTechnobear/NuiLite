@@ -268,11 +268,8 @@ unsigned NuiDeviceImpl_::process(bool paint) {
 
 
 bool NuiDeviceImpl_::buttonState(unsigned but) {
-    FILE *kbd = fopen("/dev/input/by-path/platform-keys-event","r");
-    if(kbd== nullptr) return false;
     char key=0;
-    ioctl(fileno(kbd), EVIOCGKEY(1), &key);
-    fclose(kbd);
+    ioctl(keyFd_, EVIOCGKEY(1), &key);
     return ((unsigned) key) & (1 << but+1);
 }
 
