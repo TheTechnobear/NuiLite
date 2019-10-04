@@ -22,13 +22,14 @@ public:
 
 private:
     struct MenuItem {
-        explicit MenuItem(const std::string &n) : name_(n) { ; }
-
-        std::string name_;
         enum Type {
             Patch,
             System
         } type_;
+
+        explicit MenuItem(const std::string &n, MenuItem::Type t) : name_(n), type_(t) { ; }
+
+        std::string name_;
     };
 
     int execShell(const std::string &cmd);

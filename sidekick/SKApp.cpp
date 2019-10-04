@@ -24,40 +24,6 @@ SKApp::SKApp() :
 }
 
 
-void SKApp::loadMenu(const std::string dir, MenuItem::Type t) {
-    struct dirent **namelist;
-    int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
-
-    for (int i = 0; i < n; i++) {
-        char *fname = namelist[i]->d_name;
-        if (fname[0] != '.') {
-            switch (namelist[i]->d_type) {
-                case DT_DIR : {
-                    std::string patchlocation = dir + "/" + fname;
-                    std::string mainpd = patchlocation + "/main.pd";
-                    std::string shellfile = patchlocation + "/run.sh";
-                    if (checkFileExists(mainpd)
-                        || checkFileExists(shellfile)
-                        ) {
-                        auto menuItem = std::make_shared<MenuItem>(fname);
-                        menuItem->type_=t;;
-                        mainMenu_.push_back(menuItem);
-                    }
-                    break;
-                } //DT_DIR
-                case DT_REG: {
-                    break;
-                } //DT_REG
-                default:
-                    break;
-
-            }// switch
-        }
-        free(namelist[i]);
-    }
-    free(namelist);
-}
-
 void SKApp::init(SKPrefs &prefs) {
     auto cb = std::make_shared<SKCallback>(*this);
     selIdx_ = 0;
@@ -204,7 +170,7 @@ void SKApp::activateItem() {
         sidekickActive_ = false;
         std::string runFile = patchDir_ + "/" + item->name_ + "/run.sh";
         if (checkFileExists(runFile)) {
-            if(item->type_==MenuItem::Patch) {
+            if (item->type_ == MenuItem::Patch) {
                 lastPatch_ = item->name_;
                 if (loadOnStartup_ && stateFile_.length()) {
                     saveState();
@@ -232,6 +198,41 @@ void SKApp::saveState() {
     outfile.close();
     cJSON_Delete(root);
 }
+
+
+void SKApp::loadMenu(const std::string dir, MenuItem::Type t) {
+    struct dirent **namelist;
+    int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
+
+    for (int i = 0; i < n; i++) {
+        char *fname = namelist[i]->d_name;
+        if (fname[0] != '.') {
+            switch (namelist[i]->d_type) {
+                case DT_DIR : {
+                    std::string patchlocation = dir + "/" + fname;
+                    std::string mainpd = patchlocation + "/main.pd";
+                    std::string shellfile = patchlocation + "/run.sh";
+                    if (checkFileExists(mainpd)
+                        || checkFileExists(shellfile)
+                        ) {
+                        auto menuItem = std::make_shared<MenuItem>(fname, t);
+                        mainMenu_.push_back(menuItem);
+                    }
+                    break;
+                } //DT_DIR
+                case DT_REG: {
+                    break;
+                } //DT_REG
+                default:
+                    break;
+
+            }// switch
+        }
+        free(namelist[i]);
+    }
+    free(namelist);
+}
+
 
 void SKApp::onButton(unsigned id, unsigned value) {
     buttonState_[id] = (bool) value;
