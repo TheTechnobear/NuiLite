@@ -40,6 +40,7 @@ void SKApp::loadMenu(const std::string dir, MenuItem::Type t) {
                         || checkFileExists(shellfile)
                         ) {
                         auto menuItem = std::make_shared<MenuItem>(fname);
+                        menuItem->type_=t;;
                         mainMenu_.push_back(menuItem);
                     }
                     break;
