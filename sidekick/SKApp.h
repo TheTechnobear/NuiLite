@@ -21,25 +21,32 @@ public:
     void onEncoder(unsigned id, int value);
 
 private:
+    struct MenuItem {
+        explicit MenuItem(const std::string &n) : name_(n) { ; }
+
+        std::string name_;
+        enum Type {
+            Patch,
+            System
+        } type_;
+    };
+
     int execShell(const std::string &cmd);
     void runScript(const std::string &name, const std::string &cmd);
     int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
     void saveState();
+    void loadMenu(const std::string dir, MenuItem::Type t);
 
     unsigned POLL_MS_ = 1;
     unsigned ACTIVE_TIME_ = 5000; //5000 mSec
     std::string patchDir_;
+    std::string systemDir_;
     int activeCount_ = -1;
 
     NuiLite::NuiDevice device_;
 
-    struct MenuItem {
-        explicit MenuItem(const std::string &n) : name_(n) { ; }
-
-        std::string name_;
-    };
 
     std::vector<std::shared_ptr<MenuItem>> mainMenu_;
 

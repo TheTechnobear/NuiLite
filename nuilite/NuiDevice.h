@@ -25,7 +25,7 @@ public:
 
     void start();
     void stop();
-    unsigned process(bool paint=true);
+    unsigned process(bool paint = true);
     void addCallback(std::shared_ptr<NuiCallback>);
 
     bool buttonState(unsigned but);

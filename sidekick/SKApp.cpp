@@ -23,31 +23,17 @@ SKApp::SKApp() :
 
 }
 
-void SKApp::init(SKPrefs &prefs) {
-    auto cb = std::make_shared<SKCallback>(*this);
-    selIdx_ = 0;
-    sidekickActive_ = false;
-    keepRunning_ = true;
-    activeCount_ = -1;
 
-    // load preferences
-    patchDir_ = prefs.getString("patchDir", "./patches");
-    ACTIVE_TIME_ = (unsigned) prefs.getInt("activeTime", 5000);
-    POLL_MS_ = (unsigned) prefs.getInt("pollTime", 1);
-    loadOnStartup_ = prefs.getBool("loadOnStartup", true);
-    stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
-
+void SKApp::loadMenu(const std::string dir, MenuItem::Type t) {
     struct dirent **namelist;
-    std::setlocale(LC_ALL, "en_US.UTF-8");
-
-    int n = scandir(patchDir_.c_str(), &namelist, nullptr, alphasort);
+    int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
 
     for (int i = 0; i < n; i++) {
         char *fname = namelist[i]->d_name;
         if (fname[0] != '.') {
             switch (namelist[i]->d_type) {
                 case DT_DIR : {
-                    std::string patchlocation = patchDir_ + "/" + fname;
+                    std::string patchlocation = dir + "/" + fname;
                     std::string mainpd = patchlocation + "/main.pd";
                     std::string shellfile = patchlocation + "/run.sh";
                     if (checkFileExists(mainpd)
@@ -69,6 +55,27 @@ void SKApp::init(SKPrefs &prefs) {
         free(namelist[i]);
     }
     free(namelist);
+}
+
+void SKApp::init(SKPrefs &prefs) {
+    auto cb = std::make_shared<SKCallback>(*this);
+    selIdx_ = 0;
+    sidekickActive_ = false;
+    keepRunning_ = true;
+    activeCount_ = -1;
+
+    // load preferences
+    patchDir_ = prefs.getString("patchDir", "./patches");
+    systemDir_ = prefs.getString("SystemDir", "./system");
+    ACTIVE_TIME_ = (unsigned) prefs.getInt("activeTime", 5000);
+    POLL_MS_ = (unsigned) prefs.getInt("pollTime", 1);
+    loadOnStartup_ = prefs.getBool("loadOnStartup", true);
+    stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
+
+    std::setlocale(LC_ALL, "en_US.UTF-8");
+    mainMenu_.clear();
+    loadMenu(patchDir_, MenuItem::Patch);
+    loadMenu(systemDir_, MenuItem::System);
 
 
     cb->init();
@@ -76,19 +83,19 @@ void SKApp::init(SKPrefs &prefs) {
     device_.addCallback(cb);
     device_.start();
 
-    if(loadOnStartup_) {
+    if (loadOnStartup_) {
 
-        if(device_.buttonState(0)) {
-           std::cerr << "button 1 during startup : force menu" << std::endl;
-           activeCount_ = 1;
+        if (device_.buttonState(0)) {
+            std::cerr << "button 1 during startup : force menu" << std::endl;
+            activeCount_ = 1;
         } else {
             SKPrefs stat(stateFile_);
-            if(!stat.valid()){
+            if (!stat.valid()) {
                 std::cerr << "state file invalid , bring up menu" << std::endl;
                 activeCount_ = 1;
             } else {
                 lastPatch_ = stat.getString("lastPatch", "");
-                if(lastPatch_.length()==0) {
+                if (lastPatch_.length() == 0) {
                     std::cerr << "no last patch, bring up menu" << std::endl;
                     activeCount_ = 1;
                 } else {
@@ -96,12 +103,12 @@ void SKApp::init(SKPrefs &prefs) {
                     bool loaded = false;
                     std::string patchlocation = patchDir_ + "/" + lastPatch_;
                     std::string shellfile = patchlocation + "/run.sh";
-    //              std::string mainpd = patchlocation + "/main.pd";
+                    //              std::string mainpd = patchlocation + "/main.pd";
                     if (checkFileExists(shellfile)) {
                         runScript(lastPatch_, "run.sh");
                         loaded = true;
                     }
-    //              else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
+                    //              else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
 
                     if (loaded) {
                         unsigned idx = 0;
@@ -196,12 +203,14 @@ void SKApp::activateItem() {
         sidekickActive_ = false;
         std::string runFile = patchDir_ + "/" + item->name_ + "/run.sh";
         if (checkFileExists(runFile)) {
-            runScript(item->name_, "run.sh");
-            lastPatch_ = item->name_;
-
-            if (loadOnStartup_ && stateFile_.length()) {
-                saveState();
+            if(item->type_==MenuItem::Patch) {
+                lastPatch_ = item->name_;
+                if (loadOnStartup_ && stateFile_.length()) {
+                    saveState();
+                }
             }
+
+            runScript(item->name_, "run.sh");
         }
 
     } catch (std::out_of_range &) { ;

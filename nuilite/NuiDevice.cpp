@@ -109,7 +109,6 @@ private:
     void deinitDisplay();
 
 
-
     std::string resPath_;
     std::thread gpioThread_;
     bool keepRunning_;
@@ -157,7 +156,7 @@ void NuiDevice::addCallback(std::shared_ptr<NuiCallback> cb) {
 }
 
 bool NuiDevice::buttonState(unsigned but) {
-    return impl_->buttonState( but);
+    return impl_->buttonState(but);
 }
 
 unsigned NuiDevice::numEncoders() {
@@ -262,15 +261,15 @@ unsigned NuiDeviceImpl_::process(bool paint) {
             }
         }
     }
-    if(paint) displayPaint();
+    if (paint) displayPaint();
     return 0;
 }
 
 
 bool NuiDeviceImpl_::buttonState(unsigned but) {
-    char key=0;
+    char key = 0;
     ioctl(keyFd_, EVIOCGKEY(1), &key);
-    return ((unsigned) key) & (1 << but+1);
+    return ((unsigned) key) & (1 << but + 1);
 }
 
 
