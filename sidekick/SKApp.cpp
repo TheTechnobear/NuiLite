@@ -72,7 +72,7 @@ void SKApp::init(SKPrefs &prefs) {
                     std::string shellfile = patchlocation + "/run.sh";
                     //              std::string mainpd = patchlocation + "/main.pd";
                     if (checkFileExists(shellfile)) {
-                        runScript(lastPatch_, "run.sh");
+                        runScript(patchDir_,lastPatch_, "run.sh");
                         loaded = true;
                     }
                     //              else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
@@ -114,9 +114,15 @@ void SKApp::run() {
                     std::cerr << "Sidekick activated,stop processes" << std::endl;
                     displayMenu();
                     for (const auto &mi:mainMenu_) {
-                        std::string stopfile = patchDir_ + "/" + mi->name_ + "/stop.sh";
+                        std::string root;
+                        if(mi->type_ == MenuItem::System) {
+                            root = systemDir_;
+                        } else {
+                            root = patchDir_;
+                        }
+                        std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
                         if (checkFileExists(stopfile)) {
-                            runScript(mi->name_, "stop.sh");
+                            runScript(root,mi->name_, "stop.sh");
                         }
                     }
                 }
@@ -134,8 +140,8 @@ int SKApp::execShell(const std::string &cmd) {
 }
 
 
-void SKApp::runScript(const std::string &name, const std::string &cmd) {
-    std::string shcmd = patchDir_ + "/" + name + "/" + cmd + " &";
+void SKApp::runScript(const std::string& root, const std::string &name, const std::string &cmd) {
+    std::string shcmd = root + "/" + name + "/" + cmd + " &";
     std::cout << "running : " << shcmd << std::endl;
     execShell(shcmd);
 }
@@ -168,7 +174,14 @@ void SKApp::activateItem() {
         std::cerr << "launch : " << item->name_ << std::endl;
         sleep(1);
         sidekickActive_ = false;
-        std::string runFile = patchDir_ + "/" + item->name_ + "/run.sh";
+        std::string root;
+        if(item->type_ == MenuItem::System) {
+            root = systemDir_;
+        } else {
+            root = patchDir_;
+        }
+
+        std::string runFile = root + "/" + item->name_ + "/run.sh";
         if (checkFileExists(runFile)) {
             if (item->type_ == MenuItem::Patch) {
                 lastPatch_ = item->name_;
@@ -177,7 +190,7 @@ void SKApp::activateItem() {
                 }
             }
 
-            runScript(item->name_, "run.sh");
+            runScript(root,item->name_, "run.sh");
         }
 
     } catch (std::out_of_range &) { ;

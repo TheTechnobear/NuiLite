@@ -33,7 +33,7 @@ private:
     };
 
     int execShell(const std::string &cmd);
-    void runScript(const std::string &name, const std::string &cmd);
+    void runScript(const std::string &root,const std::string &name, const std::string &cmd);
     int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
