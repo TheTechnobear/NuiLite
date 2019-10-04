@@ -16,7 +16,6 @@ void intHandler(int dummy) {
         exit(-1);
     }
     keepRunning = false;
-    device.stop();
 }
 
 

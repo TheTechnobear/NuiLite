@@ -1,0 +1,10 @@
+{
+  "_description_": "sidekick - this config file shows the keys available and their default values",
+  "patchDir": "./patches",
+  "pollTime": 1,
+  "activeTime": 5000,
+  "loadOnStartup": true,
+  "stateFile": "./sidekick-state.json",
+  "startupTime": 10,
+  "_endofconfig_": "that's all folks"
+}

@@ -5,6 +5,7 @@
 #include <signal.h>
 
 #include "SKApp.h"
+#include "SKPrefs.h"
 
 static volatile bool keepRunning = true;
 
@@ -24,10 +25,16 @@ void intHandler(int) {
 
 
 int main(int argc, const char *argv[]) {
+    SKPrefs prefs;
+    if (!prefs.loadPreferences(std::string("./sidekick.json"))) {
+        std::cerr << "./sidekick.json preferences file cannot be loaded";
+        return -1;
+    }
+
     std::cout << "starting sidekick" << std::endl;
     signal(SIGINT, intHandler);
     app_ = std::make_shared<SKApp>();
-    app_->init();
+    app_->init(prefs);
     app_->run();
     std::cout << "stopping sidekick" << std::endl;
     return 0;

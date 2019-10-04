@@ -7,12 +7,13 @@
 
 #include "NuiDevice.h"
 
+class SKPrefs;
 
 class SKApp {
 public:
     SKApp();
 
-    void init();
+    void init(SKPrefs &);
     void run();
     void stop();
 
@@ -25,11 +26,11 @@ private:
     int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
+    void saveState();
 
-
-    static constexpr unsigned POLL_MS = 1;
-    static constexpr unsigned ACTIVE_TIME = 5000; //5000 mSec
-    std::string patchDir_ = "./patches";
+    unsigned POLL_MS_ = 1;
+    unsigned ACTIVE_TIME_ = 5000; //5000 mSec
+    std::string patchDir_;
     int activeCount_ = -1;
 
     NuiLite::NuiDevice device_;
@@ -47,4 +48,11 @@ private:
     bool buttonState_[4] = {false, false, false, false};
     unsigned maxItems_ = 5;
     bool keepRunning_;
+
+    std::string lastPatch_;
+
+    bool loadOnStartup_;
+    std::string stateFile_;
+    int startupTime_;
+    int startupCount_;
 };
