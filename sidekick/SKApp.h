@@ -53,6 +53,4 @@ private:
 
     bool loadOnStartup_;
     std::string stateFile_;
-    int startupTime_;
-    int startupCount_;
 };

@@ -273,7 +273,7 @@ bool NuiDeviceImpl_::buttonState(unsigned but) {
     char key=0;
     ioctl(fileno(kbd), EVIOCGKEY(1), &key);
     fclose(kbd);
-    return ((unsigned) key) & (1 << but);
+    return ((unsigned) key) & (1 << but+1);
 }
 
 
