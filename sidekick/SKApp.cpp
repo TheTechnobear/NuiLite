@@ -72,7 +72,7 @@ void SKApp::init(SKPrefs &prefs) {
                     std::string shellfile = patchlocation + "/run.sh";
                     //              std::string mainpd = patchlocation + "/main.pd";
                     if (checkFileExists(shellfile)) {
-                        runScript(patchDir_,lastPatch_, "run.sh");
+                        runScript(patchDir_, lastPatch_, "run.sh");
                         loaded = true;
                     }
                     //              else if (checkFileExists(mainpd) ) { runPd(lastPatch_, "main.pd")};
@@ -115,14 +115,14 @@ void SKApp::run() {
                     displayMenu();
                     for (const auto &mi:mainMenu_) {
                         std::string root;
-                        if(mi->type_ == MenuItem::System) {
+                        if (mi->type_ == MenuItem::System) {
                             root = systemDir_;
                         } else {
                             root = patchDir_;
                         }
                         std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
                         if (checkFileExists(stopfile)) {
-                            runScript(root,mi->name_, "stop.sh");
+                            runScript(root, mi->name_, "stop.sh");
                         }
                     }
                 }
@@ -140,7 +140,7 @@ int SKApp::execShell(const std::string &cmd) {
 }
 
 
-void SKApp::runScript(const std::string& root, const std::string &name, const std::string &cmd) {
+void SKApp::runScript(const std::string &root, const std::string &name, const std::string &cmd) {
     std::string shcmd = root + "/" + name + "/" + cmd + " &";
     std::cout << "running : " << shcmd << std::endl;
     execShell(shcmd);
@@ -157,7 +157,7 @@ void SKApp::displayMenu() {
     device_.displayClear();
     unsigned line = 0;
     for (const auto &mi : mainMenu_) {
-        device_.displayText(line, mi->name_);
+        device_.displayText(0, line, mi->name_, <#initializer#>);
         line++;
         if (line > 5) break;
     }
@@ -169,13 +169,13 @@ void SKApp::activateItem() {
     try {
         auto item = mainMenu_.at(selIdx_);
         device_.displayClear();
-        device_.displayText(0, "Launch...");
-        device_.displayText(1, item->name_);
+        device_.displayText(15, 0, 0, "Launch...");
+        device_.displayText(15, 0, 1, item->name_);
         std::cerr << "launch : " << item->name_ << std::endl;
         sleep(1);
         sidekickActive_ = false;
         std::string root;
-        if(item->type_ == MenuItem::System) {
+        if (item->type_ == MenuItem::System) {
             root = systemDir_;
         } else {
             root = patchDir_;
@@ -190,7 +190,7 @@ void SKApp::activateItem() {
                 }
             }
 
-            runScript(root,item->name_, "run.sh");
+            runScript(root, item->name_, "run.sh");
         }
 
     } catch (std::out_of_range &) { ;

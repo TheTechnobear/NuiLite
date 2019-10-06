@@ -11,7 +11,7 @@ NuiLite::NuiDevice device;
 
 void intHandler(int dummy) {
     std::cerr << "LibNuiTest intHandler called" << std::endl;
-    if(!keepRunning) {
+    if (!keepRunning) {
         sleep(1);
         exit(-1);
     }
@@ -19,54 +19,58 @@ void intHandler(int dummy) {
 }
 
 
-
 class TestCallback : public NuiLite::NuiCallback {
 public:
-    void onButton(unsigned id, unsigned value)  override {
-	char buf[100];
-        sprintf(buf,"Button %d : %d", id, value);
-	device.clearText(1);
-        device.displayText(1,buf);
-        fprintf(stderr,"button %d : %d\n", id, value);
-        if(value) {
-            switch(id) {
+    void onButton(unsigned id, unsigned value) override {
+        char buf[100];
+        sprintf(buf, "Button %d : %d", id, value);
+        device.clearText(1);
+        device.displayText(15, 0, 1, buf);
+        fprintf(stderr, "button %d : %d\n", id, value);
+        if (value) {
+            switch (id) {
                 case 0 : {
-			device.clearText(2);
-			device.displayText(2,0,"hello");
-			device.displayText(2,25,"world");
-			break;
-		}
-                case 1 : device.clearText(2); break;
-                case 2 : device.invertText(2); break;
-                default: break;
+                    device.clearText(0, 2);
+                    device.displayText(0, 2, 0, "hello");
+                    device.displayText(0, 2, 25, "world");
+                    break;
+                }
+                case 1 :
+                    device.clearText(0, 2);
+                    break;
+                case 2 :
+                    device.invertText(2);
+                    break;
+                default:
+                    break;
 
             }
         }
     }
 
-    void onEncoder(unsigned id, int value) override  {
-	char buf[100];
-        sprintf(buf,"Encoder %d : %d ", id, value);
-	device.clearText(0);
-        device.displayText(0,buf);
-        fprintf(stderr,"encoder %d : %d\n", id, value);
+    void onEncoder(unsigned id, int value) override {
+        char buf[100];
+        sprintf(buf, "Encoder %d : %d ", id, value);
+        device.clearText(0);
+        device.displayText(15, 0, 0, buf);
+        fprintf(stderr, "encoder %d : %d\n", id, value);
     }
 };
 
 
 // note: we are only painting every second to avoid tight loop here 
-void funcParam(unsigned row, unsigned col, const std::string& name, const std::string& value,bool selected=false) {
-    unsigned x = col*64;
-    unsigned y1 = (row+1) * 20;
+void funcParam(unsigned row, unsigned col, const std::string &name, const std::string &value, bool selected = false) {
+    unsigned x = col * 64;
+    unsigned y1 = (row + 1) * 20;
     unsigned y2 = y1 + 10;
-    unsigned clr = selected ? 15: 0;
-    device.clearRect(x,y1,62+(col*2),-10,5);
-    device.drawText(x + 1,y1 -1,name,clr);
-    device.clearRect(x,y2,62+(col*2) ,-10,0);
-    device.drawText(x + 1,y2 -1,value,15);
+    unsigned clr = selected ? 15 : 0;
+    device.clearRect(5, x, y1, 62 + (col * 2), -10);
+    device.drawText(clr, x + 1, y1 - 1, name);
+    device.clearRect(0, x, y2, 62 + (col * 2), -10);
+    device.drawText(15, x + 1, y2 - 1, value);
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
     std::cout << "starting test" << std::endl;
     device.addCallback(std::make_shared<TestCallback>());
 
@@ -76,10 +80,10 @@ int main(int argc, const char * argv[]) {
     device.displayClear();
 
 
-    device.drawPNG(0,0,"./orac.png");
-    device.clearText(0,1);
-    device.displayText(0,0,"a1 : BasicPoly > main",15);
-   
+    device.drawPNG(0, 0, "./orac.png");
+    device.clearText(1, 0);
+    device.displayText(15, 0, 0, "a1 : BasicPoly > main");
+
     /*
     device.clearRect(0,0, 128,10,1);
     device.drawText(0,8,"a1 : BasicPoly > main",15);
@@ -98,7 +102,7 @@ int main(int argc, const char * argv[]) {
               << device.buttonState(2)
               << std::endl;
 
-    while(keepRunning) {
+    while (keepRunning) {
         device.process();
         sleep(1);
     }

@@ -82,4 +82,5 @@ add_subdirectory(external/cJSON cjson)
 
 add_subdirectory(nuilite)
 add_subdirectory(sidekick)
+add_subdirectory(pd)
 

@@ -90,13 +90,13 @@ public:
     void displayPaint();
 
     // text functions 
-    void displayText(unsigned line, unsigned col, const std::string &str, unsigned clr);
-    void clearText(unsigned line, unsigned clr);
+    void displayText(unsigned clr, unsigned line, unsigned col, const std::string &str);
+    void clearText(unsigned clr, unsigned line);
     void invertText(unsigned line);
 
     // draw functions
-    void clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr);
-    void drawText(unsigned x, unsigned y, const std::string &str, unsigned clr);
+    void clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
+    void drawText(unsigned clr, unsigned x, unsigned y, const std::string &str);
     void drawPNG(unsigned x, unsigned y, const char *filename);
 
     // public but not part of interface!
@@ -172,40 +172,28 @@ void NuiDevice::displayPaint() {
     impl_->displayPaint();
 }
 
-void NuiDevice::displayText(unsigned line, unsigned col, const std::string &str, unsigned clr) {
-    impl_->displayText(line, col, str, clr);
-}
-
-void NuiDevice::displayText(unsigned line, unsigned col, const std::string &str) {
-    impl_->displayText(line, col, str, 15);
-}
-
-void NuiDevice::displayText(unsigned line, const std::string &str) {
-    impl_->displayText(line, 0, str, 15);
+void NuiDevice::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
+    impl_->displayText(clr, line, col, str);
 }
 
 void NuiDevice::invertText(unsigned line) {
     impl_->invertText(line);
 }
 
-void NuiDevice::clearText(unsigned line, unsigned clr) {
-    impl_->clearText(line, clr);
-}
-
-void NuiDevice::clearText(unsigned line) {
-    impl_->clearText(line, 0);
+void NuiDevice::clearText(unsigned clr, unsigned line) {
+    impl_->clearText(clr, line);
 }
 
 void NuiDevice::drawPNG(unsigned x, unsigned y, const char *filename) {
     impl_->drawPNG(x, y, filename);
 }
 
-void NuiDevice::clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr) {
-    impl_->clearRect(x, y, w, h, clr);
+void NuiDevice::clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
+    impl_->clearRect(clr, x, y, w, h);
 }
 
-void NuiDevice::drawText(unsigned x, unsigned y, const std::string &str, unsigned clr) {
-    impl_->drawText(x, y, str, clr);
+void NuiDevice::drawText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
+    impl_->drawText(clr, x, y, str);
 }
 
 
@@ -289,14 +277,14 @@ void NuiDeviceImpl_::displayPaint() {
 
 }
 
-void NuiDeviceImpl_::clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr) {
+void NuiDeviceImpl_::clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_rectangle(cr_, x, y, w, h);
     cairo_fill(cr_);
 }
 
 
-void NuiDeviceImpl_::drawText(unsigned x, unsigned y, const std::string &str, unsigned clr) {
+void NuiDeviceImpl_::drawText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
@@ -310,11 +298,7 @@ void NuiDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void NuiDeviceImpl_::displayText(
-    unsigned line, unsigned col,
-    const std::string &str,
-    unsigned clr
-) {
+void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
     unsigned x = col * 4;
     unsigned y = line * 10 + 10;
 
@@ -334,7 +318,7 @@ void NuiDeviceImpl_::invertText(unsigned line) {
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
 }
 
-void NuiDeviceImpl_::clearText(unsigned line, unsigned clr) {
+void NuiDeviceImpl_::clearText(unsigned clr, unsigned line) {
     unsigned x = 0;
     unsigned y = line * 10 + 10;
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);

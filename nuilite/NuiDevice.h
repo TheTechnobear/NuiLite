@@ -34,16 +34,13 @@ public:
     void displayClear();
     void displayPaint();
     // draw funcs
-    void clearRect(unsigned x, unsigned y, unsigned w, unsigned h, unsigned clr);
-    void drawText(unsigned x, unsigned y, const std::string &str, unsigned clr);
+    void clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
+    void drawText(unsigned clr, unsigned x, unsigned y, const std::string &str);
     void drawPNG(unsigned x, unsigned y, const char *filename);
 
     // simple text displays
-    void displayText(unsigned line, const std::string &str);
-    void displayText(unsigned line, unsigned col, const std::string &str);
-    void displayText(unsigned line, unsigned col, const std::string &str, unsigned clr);
-    void clearText(unsigned line);
-    void clearText(unsigned line, unsigned clr);
+    void displayText(unsigned clr, unsigned line, unsigned col, const std::string &str);
+    void clearText(unsigned clr, unsigned line);
     void invertText(unsigned line);
 private:
     NuiDeviceImpl_ *impl_;
