@@ -24,15 +24,15 @@ public:
     void onButton(unsigned id, unsigned value) override {
         char buf[100];
         sprintf(buf, "Button %d : %d", id, value);
-        device.clearText(1);
+        device.clearText(0,0);
         device.displayText(15, 0, 1, buf);
         fprintf(stderr, "button %d : %d\n", id, value);
         if (value) {
             switch (id) {
                 case 0 : {
                     device.clearText(0, 2);
-                    device.displayText(0, 2, 0, "hello");
-                    device.displayText(0, 2, 25, "world");
+                    device.displayText(15, 2, 0, "hello");
+                    device.displayText(15, 2, 25, "world");
                     break;
                 }
                 case 1 :
@@ -51,8 +51,8 @@ public:
     void onEncoder(unsigned id, int value) override {
         char buf[100];
         sprintf(buf, "Encoder %d : %d ", id, value);
-        device.clearText(0);
-        device.displayText(15, 0, 0, buf);
+        device.clearText(0,0);
+        device.displayText(15, 0, 1, buf);
         fprintf(stderr, "encoder %d : %d\n", id, value);
     }
 };

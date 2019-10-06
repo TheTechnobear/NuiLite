@@ -157,7 +157,7 @@ void SKApp::displayMenu() {
     device_.displayClear();
     unsigned line = 0;
     for (const auto &mi : mainMenu_) {
-        device_.displayText(0, line, mi->name_, <#initializer#>);
+        device_.displayText(15,line, 0,mi->name_);
         line++;
         if (line > 5) break;
     }
@@ -170,7 +170,7 @@ void SKApp::activateItem() {
         auto item = mainMenu_.at(selIdx_);
         device_.displayClear();
         device_.displayText(15, 0, 0, "Launch...");
-        device_.displayText(15, 0, 1, item->name_);
+        device_.displayText(15, 1, 0, item->name_);
         std::cerr << "launch : " << item->name_ << std::endl;
         sleep(1);
         sidekickActive_ = false;
