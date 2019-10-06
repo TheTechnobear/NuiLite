@@ -11,7 +11,7 @@ set(NUIPD_SRC
 
 
 include_directories(
-        "${PROJECT_SOURCE_DIR}/../NuiLite"
+        "${PROJECT_SOURCE_DIR}/../nuilite"
 )
 
 add_library(NuiPd SHARED ${NUIPD_SRC})
