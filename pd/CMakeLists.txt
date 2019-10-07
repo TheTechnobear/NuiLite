@@ -16,7 +16,7 @@ include_directories(
 
 add_library(NuiPd SHARED ${NUIPD_SRC})
 
-target_link_libraries(NuiPd ${LIBCAIRO} cjson pthread)
+target_link_libraries(NuiPd nuilite)
 
 
 ### setup for pure data

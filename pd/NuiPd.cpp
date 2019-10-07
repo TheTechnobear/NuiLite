@@ -77,7 +77,6 @@ void NuiPdCallback::onEncoder(unsigned id, int value) {
 
 void NuiPd_free(t_NuiPd *x) {
     if (x->device_ != nullptr) x->device_->stop();
-    x->device_->start();
     t_pd *nuiStop = gensym("nui_stop")->s_thing;
     if (nuiStop) pd_bang(nuiStop);
 
@@ -94,8 +93,6 @@ void *NuiPd_new(t_floatarg) {
     t_pd *nuiStart = gensym("nui_start")->s_thing;
     if (nuiStart) pd_bang(nuiStart);
 
-    NuiPd_sendMsg("nui_num_encoders", x->device_->numEncoders());
-    NuiPd_sendMsg("nui_num_buttons", 3);
     return (void *) x;
 }
 
@@ -106,20 +103,21 @@ void NuiPd_setup(void) {
                             (t_method) NuiPd_free,
                             sizeof(t_NuiPd),
                             CLASS_DEFAULT,
-                            A_SYMBOL, A_SYMBOL, A_NULL);
+                            A_DEFFLOAT, A_NULL);
 
     class_addmethod(NuiPd_class, (t_method) NuiPd_process, gensym("process"), A_DEFFLOAT, A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_displayClear, gensym("clear"), A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_displayPaint, gensym("paint"), A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_info, gensym("info"), A_NULL);
 
-    class_addmethod(NuiPd_class, (t_method) NuiPd_displayPaint, gensym("clearRect"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,
+    class_addmethod(NuiPd_class, (t_method) NuiPd_clearRect, gensym("clearRect"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,
                     A_NULL);
-    class_addmethod(NuiPd_class, (t_method) NuiPd_displayPaint, gensym("drawText"), A_GIMME, A_NULL);
-    class_addmethod(NuiPd_class, (t_method) NuiPd_displayText, gensym("drawPng"), A_DEFFLOAT, A_DEFFLOAT, A_DEFSYMBOL, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_drawText, gensym("drawText"), A_GIMME, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_drawPNG, gensym("drawPng"), A_DEFFLOAT, A_DEFFLOAT, A_DEFSYMBOL, A_NULL);
 
     class_addmethod(NuiPd_class, (t_method) NuiPd_displayText, gensym("displayText"), A_GIMME, A_NULL);
-    class_addmethod(NuiPd_class, (t_method) NuiPd_displayText, gensym("clearText"), A_DEFFLOAT, A_DEFFLOAT, A_NULL);
-    class_addmethod(NuiPd_class, (t_method) NuiPd_displayText, gensym("invertText"), A_DEFFLOAT, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_clearText, gensym("clearText"), A_DEFFLOAT, A_DEFFLOAT, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_invertText, gensym("invertText"), A_DEFFLOAT, A_NULL);
 }
 
 
@@ -136,6 +134,12 @@ void NuiPd_displayClear(t_NuiPd *obj) {
 void NuiPd_displayPaint(t_NuiPd *obj) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     obj->device_->displayPaint();
+}
+
+void NuiPd_info(t_NuiPd *obj) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    NuiPd_sendMsg("nui_num_buttons", 3);
+    NuiPd_sendMsg("nui_num_encoders", obj->device_->numEncoders());
 }
 
 // graphics
@@ -171,8 +175,11 @@ void NuiPd_drawText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
         if (arg->a_type == A_SYMBOL) {
             t_symbol *sym = atom_getsymbol(arg);
             str += sym->s_name;
-            if (i != argc - 1) str += " ";
+        }  else if (arg->a_type == A_FLOAT) {
+            str += std::to_string(atom_getfloat(arg));
         }
+
+        if (i != argc - 1) str += " ";
     }
     obj->device_->drawText(clr, x, y, str);
 }
@@ -211,8 +218,11 @@ void NuiPd_displayText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
         if (arg->a_type == A_SYMBOL) {
             t_symbol *sym = atom_getsymbol(arg);
             str += sym->s_name;
-            if (i != argc - 1) str += " ";
+        }  else if (arg->a_type == A_FLOAT) {
+            str += std::to_string(atom_getfloat(arg));
         }
+
+        if (i != argc - 1) str += " ";
     }
     obj->device_->displayText(clr, line, col, str);
 }
