@@ -23,7 +23,8 @@ public:
 private:
     struct MenuItem {
         enum Type {
-            Patch,
+            ShellPatch,
+            PdPatch,
             System
         } type_;
 
@@ -34,11 +35,13 @@ private:
 
     int execShell(const std::string &cmd);
     void runScript(const std::string &root,const std::string &name, const std::string &cmd);
+    void runPd(const std::string &root, const std::string &name);
+
     int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
     void saveState();
-    void loadMenu(const std::string dir, MenuItem::Type t);
+    void loadMenu(const std::string dir, bool sys);
 
     unsigned POLL_MS_ = 1;
     unsigned ACTIVE_TIME_ = 5000; //5000 mSec
@@ -53,6 +56,7 @@ private:
 
     bool sidekickActive_ = false;
     unsigned selIdx_ = 0;
+    unsigned menuOffset_ = 0;
     bool buttonState_[4] = {false, false, false, false};
     unsigned maxItems_ = 5;
     bool keepRunning_;
@@ -61,4 +65,5 @@ private:
 
     bool loadOnStartup_;
     std::string stateFile_;
+    std::string pdOpts_;
 };
