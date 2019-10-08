@@ -200,16 +200,23 @@ void SKApp::activateItem() {
             root = patchDir_;
         }
 
+        std::string pdFile = root + "/" + item->name_ + "/main.pd";
         std::string runFile = root + "/" + item->name_ + "/run.sh";
-        if (checkFileExists(runFile)) {
-            if (item->type_ == MenuItem::ShellPatch) {
+        bool sh=checkFileExists(runFile);
+        bool pd=checkFileExists(pdFile);
+        if (sh || pd) {
+            if (item->type_ == MenuItem::PdPatch || item->type_ == MenuItem::ShellPatch) {
                 lastPatch_ = item->name_;
                 if (loadOnStartup_ && stateFile_.length()) {
                     saveState();
                 }
             }
+            if(pd) {
+                runPd(root, item->name_);
+            } else {
+                runScript(root, item->name_, "run.sh");
+            }
 
-            runScript(root, item->name_, "run.sh");
         }
 
     } catch (std::out_of_range &) { ;
@@ -292,12 +299,13 @@ void SKApp::onEncoder(unsigned id, int value) {
     if (!sidekickActive_) return;
     if (id == 0) {
         if (value > 0) {
-            if (selIdx_ < maxItems_ && selIdx_ < (mainMenu_.size() - 1)) selIdx_++;
+            if (selIdx_ < (mainMenu_.size() - 1)) selIdx_++;
         } else if (value < 0) {
             if (selIdx_ > 0) selIdx_--;
         }
-        if (selIdx_ > (menuOffset_ + maxItems_)) menuOffset_ = selIdx_ - maxItems_;
+        if (selIdx_ >= (menuOffset_ + maxItems_)) menuOffset_ = selIdx_ - (maxItems_-1);
         if (menuOffset_ > selIdx_) menuOffset_ = selIdx_;
+
+        displayMenu();
     }
-    displayMenu();
 }

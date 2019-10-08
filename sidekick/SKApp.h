@@ -58,7 +58,7 @@ private:
     unsigned selIdx_ = 0;
     unsigned menuOffset_ = 0;
     bool buttonState_[4] = {false, false, false, false};
-    unsigned maxItems_ = 5;
+    unsigned maxItems_ = 6;
     bool keepRunning_;
 
     std::string lastPatch_;
