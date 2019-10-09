@@ -142,9 +142,17 @@ void SKApp::runScript(const std::string &root, const std::string &name, const st
 
 void SKApp::runPd(const std::string &root, const std::string &name) {
     std::string pdOpts = pdOpts_;
-    std::string pdOptsFile = root + "/" + name + "pd-opts.txt";
-    if (checkFileExists(pdOptsFile)) {
-        pdOpts = getCmdOptions(pdOptsFile);
+    int gui = execShell("if [ xprop -root &> /dev/null ]; then exit 1; else exit 0; fi;");
+    if (gui) {
+        // overides existing options
+        pdOpts = pdOpts + "-gui -audiobuf 10";
+    }
+
+    std::string pdOptsFile;
+    if (checkFileExists(root + "/" + name + "pd-opts.txt")) pdOptsFile = root + "/" + name + "pd-opts.txt";
+    else if (checkFileExists("./pd-opts.txt")) pdOptsFile = "./pd-opts.txt";
+    if (pdOptsFile.length() > 0) {
+        pdOpts = pdOpts + " " + getCmdOptions(pdOptsFile);
         std::cout << "using cmd options file : " << pdOptsFile << " options : " << pdOpts << std::endl;
     }
 
@@ -208,15 +216,28 @@ void SKApp::activateItem() {
             }
             case MenuItem::PdPatch:
             case MenuItem::ShellPatch: {
+
                 lastPatch_ = item->name_;
                 if (loadOnStartup_ && stateFile_.length()) {
                     saveState();
                 }
+
+                std::string prePatch;
+                if (checkFileExists(patchDir_ + "/" + item->name_ + "/pre-patch.sh")) prePatch = patchDir_ + "/" + item->name_ + "/pre-patch.sh";
+                else if (checkFileExists("./pre-patch.sh")) prePatch = "./pre-patch.sh";
+                if (prePatch.length() > 0) execShell(prePatch);
+
                 if (item->type_ == MenuItem::PdPatch) {
                     runPd(patchDir_, item->name_);
                 } else {
                     runScript(patchDir_, item->name_, "run.sh");
                 }
+
+                std::string postPatch;
+                if (checkFileExists(patchDir_ + "/" + item->name_ + "/post-patch.sh")) postPatch = patchDir_ + "/" + item->name_ + "/post-patch.sh";
+                else if (checkFileExists("./post-patch.sh")) postPatch = "./post-patch.sh";
+                if (postPatch.length() > 0) execShell(postPatch);
+
                 break;
             }
             case MenuItem::ZipFile : {
@@ -286,8 +307,8 @@ void SKApp::loadMenu(const std::string &dir, bool sys) {
                         char ext[5];
                         ext[0] = fname[len - 4];
                         ext[4] = 0;
-                        for (int i = 1; i < 4; i++) {
-                            ext[i] = std::toupper(fname[len - 4 + i]);
+                        for (auto ci = 1; ci < 4; ci++) {
+                            ext[ci] = std::toupper(fname[len - 4 + ci]);
                         }
                         if (strcmp(ext, ".ZIP") == 0) {
                             auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::ZipFile);
