@@ -51,10 +51,17 @@ void SKApp::init(SKPrefs &prefs) {
     device_.addCallback(cb);
     device_.start();
 
+    SKPrefs stat(stateFile_);
+    if (stat.valid()) {
+        lastPatch_ = stat.getString("lastPatch", "");
+    }
+
+    bool lastPatchFound=false;
     unsigned idx = 0;
     for (const auto &mi:mainMenu_) {
         if (mi->name_ == lastPatch_) {
             selIdx_ = idx;
+            lastPatchFound=true;
             break;
         }
         idx++;
@@ -67,30 +74,12 @@ void SKApp::init(SKPrefs &prefs) {
             std::cerr << "button 1 during startup : force menu" << std::endl;
             activeCount_ = 1;
         } else {
-            SKPrefs stat(stateFile_);
-            if (!stat.valid()) {
-                std::cerr << "state file invalid , bring up menu" << std::endl;
+            if (!lastPatchFound) {
+                std::cerr << "last patch invalid, bring up menu" << std::endl;
                 activeCount_ = 1;
             } else {
-                lastPatch_ = stat.getString("lastPatch", "");
-                if (lastPatch_.length() == 0) {
-                    std::cerr << "no last patch, bring up menu" << std::endl;
-                    activeCount_ = 1;
-                } else {
-                    std::cerr << "load startup file" << std::endl;
-                    bool loaded = false;
-                    for (const auto &mi:mainMenu_) {
-                        if (mi->name_ == lastPatch_) {
-                            activateItem();
-                            loaded = true;
-                            break;
-                        }
-                    }
-                    if (!loaded) {
-                        // bring up menu if we could not load patch
-                        activeCount_ = 1;
-                    }
-                }
+                std::cerr << "load startup patch: " <<  lastPatch_ << std::endl;
+                activateItem();
             }
         }
     }
@@ -208,7 +197,6 @@ void SKApp::displayMenu() {
         idx++;
     }
 }
-
 
 void SKApp::activateItem() {
     try {
