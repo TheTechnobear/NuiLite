@@ -26,7 +26,8 @@ private:
             ShellPatch,
             PdPatch,
             ZipFile,
-            System
+            System,
+            RefreshMenu
         } type_;
 
         explicit MenuItem(const std::string &n, MenuItem::Type t) : name_(n), type_(t) { ; }
@@ -38,6 +39,7 @@ private:
     static void runScript(const std::string &root,const std::string &name, const std::string &cmd);
     void runPd(const std::string &root, const std::string &name);
     void runZip(const std::string &root, const std::string &name);
+    void runRefreshMenu();
 
     static int checkFileExists(const std::string &filename);
     void displayMenu();

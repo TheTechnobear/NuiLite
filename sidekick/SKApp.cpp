@@ -171,6 +171,13 @@ void SKApp::runZip(const std::string &root, const std::string &name) {
     displayMenu();
 }
 
+void SKApp::runRefreshMenu() {
+    std::cout << "refresh menu" << std::endl;
+    sidekickActive_ = true;
+    reloadMenu();
+    displayMenu();
+}
+
 
 int SKApp::checkFileExists(const std::string &filename) {
     struct stat st{};
@@ -242,6 +249,10 @@ void SKApp::activateItem() {
                 runZip(patchDir_, item->name_);
                 break;
             }
+            case MenuItem::RefreshMenu : {
+                runRefreshMenu();
+                break;
+            }
             default:
                 break;
         }
@@ -271,6 +282,8 @@ void SKApp::reloadMenu() {
     mainMenu_.clear();
     loadMenu(patchDir_, false);
     loadMenu(systemDir_, true);
+    auto menuItem = std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu);
+    mainMenu_.push_back(menuItem);
 }
 
 
