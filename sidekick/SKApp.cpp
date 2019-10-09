@@ -42,6 +42,7 @@ void SKApp::init(SKPrefs &prefs) {
     stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
     pdOpts_ = prefs.getString("pdOpts", "-nogui -rt -audiobuf 4 -alsamidi");
 
+    bool menuOnStartup = prefs.getBool("menuOnStartup", false);
     std::setlocale(LC_ALL, "en_US.UTF-8");
     reloadMenu();
 
@@ -50,7 +51,18 @@ void SKApp::init(SKPrefs &prefs) {
     device_.addCallback(cb);
     device_.start();
 
-    if (loadOnStartup_) {
+    unsigned idx = 0;
+    for (const auto &mi:mainMenu_) {
+        if (mi->name_ == lastPatch_) {
+            selIdx_ = idx;
+            break;
+        }
+        idx++;
+    }
+
+    if (menuOnStartup) {
+        activeCount_ = 1;
+    } else if (loadOnStartup_) {
         if (device_.buttonState(0)) {
             std::cerr << "button 1 during startup : force menu" << std::endl;
             activeCount_ = 1;
@@ -67,15 +79,12 @@ void SKApp::init(SKPrefs &prefs) {
                 } else {
                     std::cerr << "load startup file" << std::endl;
                     bool loaded = false;
-                    unsigned idx = 0;
                     for (const auto &mi:mainMenu_) {
                         if (mi->name_ == lastPatch_) {
-                            selIdx_ = idx;
                             activateItem();
                             loaded = true;
                             break;
                         }
-                        idx++;
                     }
                     if (!loaded) {
                         // bring up menu if we could not load patch
@@ -163,7 +172,7 @@ void SKApp::runPd(const std::string &root, const std::string &name) {
 
 
 void SKApp::runZip(const std::string &root, const std::string &name) {
-    std::string dir = name.substr(0,name.length()-4);
+    std::string dir = name.substr(0, name.length() - 4);
     std::string shcmd = "cd " + root + "; unzip " + name + "; rm " + name + "; cd " + dir + "; ./deploy.sh";
     std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
