@@ -142,14 +142,14 @@ void SKApp::runScript(const std::string &root, const std::string &name, const st
 
 void SKApp::runPd(const std::string &root, const std::string &name) {
     std::string pdOpts = pdOpts_;
-    int gui = execShell("if [ xprop -root &> /dev/null ]; then exit 1; else exit 0; fi;");
-    if (gui) {
+    int nogui = execShell("xprop -root > /dev/null");
+    if (!nogui) {
         // overides existing options
-        pdOpts = pdOpts + "-gui -audiobuf 10";
+        pdOpts = pdOpts + " -gui -audiobuf 10";
     }
 
     std::string pdOptsFile;
-    if (checkFileExists(root + "/" + name + "pd-opts.txt")) pdOptsFile = root + "/" + name + "pd-opts.txt";
+    if (checkFileExists(root + "/" + name + "/pd-opts.txt")) pdOptsFile = root + "/" + name + "/pd-opts.txt";
     else if (checkFileExists("./pd-opts.txt")) pdOptsFile = "./pd-opts.txt";
     if (pdOptsFile.length() > 0) {
         pdOpts = pdOpts + " " + getCmdOptions(pdOptsFile);
@@ -163,7 +163,8 @@ void SKApp::runPd(const std::string &root, const std::string &name) {
 
 
 void SKApp::runZip(const std::string &root, const std::string &name) {
-    std::string shcmd = "cd " + root + "; unzip " + name + "; rm " + name + "; cd " + name + "; ./deploy.sh";
+    std::string dir = name.substr(0,name.length()-4);
+    std::string shcmd = "cd " + root + "; unzip " + name + "; rm " + name + "; cd " + dir + "; ./deploy.sh";
     std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
     // reload menu, since new items will appear
