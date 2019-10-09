@@ -56,12 +56,12 @@ void SKApp::init(SKPrefs &prefs) {
         lastPatch_ = stat.getString("lastPatch", "");
     }
 
-    bool lastPatchFound=false;
+    bool lastPatchFound = false;
     unsigned idx = 0;
     for (const auto &mi:mainMenu_) {
         if (mi->name_ == lastPatch_) {
             selIdx_ = idx;
-            lastPatchFound=true;
+            lastPatchFound = true;
             break;
         }
         idx++;
@@ -78,7 +78,7 @@ void SKApp::init(SKPrefs &prefs) {
                 std::cerr << "last patch invalid, bring up menu" << std::endl;
                 activeCount_ = 1;
             } else {
-                std::cerr << "load startup patch: " <<  lastPatch_ << std::endl;
+                std::cerr << "load startup patch: " << lastPatch_ << std::endl;
                 activateItem();
             }
         }
