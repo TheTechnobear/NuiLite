@@ -25,6 +25,7 @@ private:
         enum Type {
             ShellPatch,
             PdPatch,
+            ZipFile,
             System
         } type_;
 
@@ -33,15 +34,18 @@ private:
         std::string name_;
     };
 
-    int execShell(const std::string &cmd);
-    void runScript(const std::string &root,const std::string &name, const std::string &cmd);
+    static int execShell(const std::string &cmd);
+    static void runScript(const std::string &root,const std::string &name, const std::string &cmd);
     void runPd(const std::string &root, const std::string &name);
+    void runZip(const std::string &root, const std::string &name);
 
-    int checkFileExists(const std::string &filename);
+    static int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
     void saveState();
-    void loadMenu(const std::string dir, bool sys);
+    void reloadMenu();
+    void loadMenu(const std::string& dir, bool sys);
+    static std::string  getCmdOptions(const std::string& file);
 
     unsigned POLL_MS_ = 1;
     unsigned ACTIVE_TIME_ = 5000; //5000 mSec

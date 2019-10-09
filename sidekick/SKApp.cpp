@@ -19,6 +19,7 @@
 SKApp::SKApp() :
     sidekickActive_(false),
     selIdx_(0),
+    loadOnStartup_(false),
     keepRunning_(true) {
 
 }
@@ -42,10 +43,7 @@ void SKApp::init(SKPrefs &prefs) {
     pdOpts_ = prefs.getString("pdOpts", "-nogui -rt -audiobuf 4 -alsamidi");
 
     std::setlocale(LC_ALL, "en_US.UTF-8");
-    mainMenu_.clear();
-    loadMenu(patchDir_, false);
-    loadMenu(systemDir_, true);
-
+    reloadMenu();
 
     cb->init();
 
@@ -53,7 +51,6 @@ void SKApp::init(SKPrefs &prefs) {
     device_.start();
 
     if (loadOnStartup_) {
-
         if (device_.buttonState(0)) {
             std::cerr << "button 1 during startup : force menu" << std::endl;
             activeCount_ = 1;
@@ -70,27 +67,17 @@ void SKApp::init(SKPrefs &prefs) {
                 } else {
                     std::cerr << "load startup file" << std::endl;
                     bool loaded = false;
-                    std::string patchlocation = patchDir_ + "/" + lastPatch_;
-                    std::string shellfile = patchlocation + "/run.sh";
-                    std::string mainpd = patchlocation + "/main.pd";
-                    if (checkFileExists(shellfile)) {
-                        runScript(patchDir_, lastPatch_, "run.sh");
-                        loaded = true;
-                    } else if (checkFileExists(mainpd)) {
-                        runPd(patchDir_, lastPatch_);
-                        loaded = true;
-                    };
-
-                    if (loaded) {
-                        unsigned idx = 0;
-                        for (const auto &mi:mainMenu_) {
-                            if (mi->name_ == lastPatch_) {
-                                selIdx_ = idx;
-                                break;
-                            }
-                            idx++;
+                    unsigned idx = 0;
+                    for (const auto &mi:mainMenu_) {
+                        if (mi->name_ == lastPatch_) {
+                            selIdx_ = idx;
+                            activateItem();
+                            loaded = true;
+                            break;
                         }
-                    } else {
+                        idx++;
+                    }
+                    if (!loaded) {
                         // bring up menu if we could not load patch
                         activeCount_ = 1;
                     }
@@ -154,10 +141,29 @@ void SKApp::runScript(const std::string &root, const std::string &name, const st
 
 
 void SKApp::runPd(const std::string &root, const std::string &name) {
-    std::string shcmd = "cd " + root + "/" + name + "; pd " + pdOpts_ + " main.pd &";
+    std::string pdOpts = pdOpts_;
+    std::string pdOptsFile = root + "/" + name + "pd-opts.txt";
+    if (checkFileExists(pdOptsFile)) {
+        pdOpts = getCmdOptions(pdOptsFile);
+        std::cout << "using cmd options file : " << pdOptsFile << " options : " << pdOpts << std::endl;
+    }
+
+    std::string shcmd = "cd " + root + "/" + name + "; pd " + pdOpts + " main.pd &";
     std::cout << "pd running : " << shcmd << std::endl;
     execShell(shcmd);
 }
+
+
+void SKApp::runZip(const std::string &root, const std::string &name) {
+    std::string shcmd = "cd " + root + "; unzip " + name + "; rm " + name + "; cd " + name + "; ./deploy.sh";
+    std::cout << "script running : " << shcmd << std::endl;
+    execShell(shcmd);
+    // reload menu, since new items will appear
+    sidekickActive_ = true;
+    reloadMenu();
+    displayMenu();
+}
+
 
 int SKApp::checkFileExists(const std::string &filename) {
     struct stat st{};
@@ -176,7 +182,9 @@ void SKApp::displayMenu() {
     }
 
     for (; mi != mainMenu_.end() && line < maxItems_; mi++) {
-        device_.displayText(15, line, 0, (*mi)->name_);
+        std::string txt = (*mi)->name_;
+        if ((*mi)->type_ == MenuItem::ZipFile) txt = "Install " + txt;
+        device_.displayText(15, line, 0, txt);
         if (idx == selIdx_) device_.invertText(line);
         line++;
         idx++;
@@ -193,33 +201,33 @@ void SKApp::activateItem() {
         std::cerr << "launch : " << item->name_ << std::endl;
         sleep(1);
         sidekickActive_ = false;
-        std::string root;
-        if (item->type_ == MenuItem::System) {
-            root = systemDir_;
-        } else {
-            root = patchDir_;
-        }
-
-        std::string pdFile = root + "/" + item->name_ + "/main.pd";
-        std::string runFile = root + "/" + item->name_ + "/run.sh";
-        bool sh=checkFileExists(runFile);
-        bool pd=checkFileExists(pdFile);
-        if (sh || pd) {
-            if (item->type_ == MenuItem::PdPatch || item->type_ == MenuItem::ShellPatch) {
+        switch (item->type_) {
+            case MenuItem::System: {
+                runScript(systemDir_, item->name_, "run.sh");
+                break;
+            }
+            case MenuItem::PdPatch:
+            case MenuItem::ShellPatch: {
                 lastPatch_ = item->name_;
                 if (loadOnStartup_ && stateFile_.length()) {
                     saveState();
                 }
+                if (item->type_ == MenuItem::PdPatch) {
+                    runPd(patchDir_, item->name_);
+                } else {
+                    runScript(patchDir_, item->name_, "run.sh");
+                }
+                break;
             }
-            if(pd) {
-                runPd(root, item->name_);
-            } else {
-                runScript(root, item->name_, "run.sh");
+            case MenuItem::ZipFile : {
+                runZip(patchDir_, item->name_);
+                break;
             }
-
+            default:
+                break;
         }
+    } catch (std::out_of_range &) {
 
-    } catch (std::out_of_range &) { ;
     }
 }
 
@@ -238,8 +246,16 @@ void SKApp::saveState() {
     cJSON_Delete(root);
 }
 
+void SKApp::reloadMenu() {
+    menuOffset_ = 0;
+    selIdx_ = 0;
+    mainMenu_.clear();
+    loadMenu(patchDir_, false);
+    loadMenu(systemDir_, true);
+}
 
-void SKApp::loadMenu(const std::string dir, bool sys) {
+
+void SKApp::loadMenu(const std::string &dir, bool sys) {
     struct dirent **namelist;
     int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
 
@@ -253,16 +269,31 @@ void SKApp::loadMenu(const std::string dir, bool sys) {
                     std::string shellfile = patchlocation + "/run.sh";
                     bool pd = checkFileExists(mainpd);
                     bool sh = checkFileExists(shellfile);
-                    if ( pd ) {
+                    if (pd) {
                         auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::PdPatch);
                         mainMenu_.push_back(menuItem);
-                    } else if(sh){
+                    } else if (sh) {
                         auto menuItem = std::make_shared<MenuItem>(fname, sys ? MenuItem::System : MenuItem::ShellPatch);
                         mainMenu_.push_back(menuItem);
                     }
                     break;
                 } //DT_DIR
                 case DT_REG: {
+                    // zip file for installation
+                    int len = strlen(fname);
+                    std::cout << fname << std::endl;
+                    if (len > 4) {
+                        char ext[5];
+                        ext[0] = fname[len - 4];
+                        ext[4] = 0;
+                        for (int i = 1; i < 4; i++) {
+                            ext[i] = std::toupper(fname[len - 4 + i]);
+                        }
+                        if (strcmp(ext, ".ZIP") == 0) {
+                            auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::ZipFile);
+                            mainMenu_.push_back(menuItem);
+                        }
+                    }
                     break;
                 } //DT_REG
                 default:
@@ -285,7 +316,7 @@ void SKApp::onButton(unsigned id, unsigned value) {
         }
 
         if (all3) {
-            activeCount_ = ACTIVE_TIME_;
+            activeCount_ = (int) ACTIVE_TIME_;
         } else {
             activeCount_ = -1;
         }
@@ -303,9 +334,21 @@ void SKApp::onEncoder(unsigned id, int value) {
         } else if (value < 0) {
             if (selIdx_ > 0) selIdx_--;
         }
-        if (selIdx_ >= (menuOffset_ + maxItems_)) menuOffset_ = selIdx_ - (maxItems_-1);
+        if (selIdx_ >= (menuOffset_ + maxItems_)) menuOffset_ = selIdx_ - (maxItems_ - 1);
         if (menuOffset_ > selIdx_) menuOffset_ = selIdx_;
 
         displayMenu();
     }
+}
+
+std::string SKApp::getCmdOptions(const std::string &file) {
+    std::string opts;
+    std::ifstream infile(file.c_str());
+    std::string line;
+    while (std::getline(infile, line)) {
+        if (line.length() > 0) {
+            opts += " " + line;
+        }
+    }
+    return opts;
 }
