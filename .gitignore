@@ -30,11 +30,6 @@ Podfile.lock
 !default.perspectivev3
 *.xccheckout
 
-**/*.pd_linux
-**/*.pd_darwin
-**/*.dll
 **/*.o
-**/*.so
-**/*.dylib
 
 

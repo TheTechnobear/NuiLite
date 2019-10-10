@@ -222,7 +222,10 @@ void NuiPd_displayText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
             t_symbol *sym = atom_getsymbol(targ);
             str += sym->s_name;
         } else if (targ->a_type == A_FLOAT) {
-            str += std::to_string(atom_getfloat(targ));
+            std::string fstr = std::to_string(atom_getfloat(targ));
+            fstr.erase(fstr.find_last_not_of('0') + 1, std::string::npos);
+            fstr.erase(fstr.find_last_not_of('.') + 1, std::string::npos);
+            str += fstr;
         }
 
         if (i != argc - 1) str += " ";

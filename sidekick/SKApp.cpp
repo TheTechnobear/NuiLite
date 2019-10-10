@@ -132,7 +132,7 @@ int SKApp::execShell(const std::string &cmd) {
 
 
 void SKApp::runScript(const std::string &root, const std::string &name, const std::string &cmd) {
-    std::string shcmd = "cd \"" + root + "/" + name + "\"; " + cmd + " &";
+    std::string shcmd = "cd \"" + root + "/" + name + "\"; ./" + cmd + " &";
     std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
 }
@@ -181,8 +181,7 @@ void SKApp::runRefreshMenu() {
 
 int SKApp::checkFileExists(const std::string &filename) {
     struct stat st{};
-    std::string s = "\"" + filename + "\"";
-    int result = stat(s.c_str(), &st);
+    int result = stat(filename.c_str(), &st);
     return result == 0;
 }
 
@@ -314,7 +313,6 @@ void SKApp::loadMenu(const std::string &dir, bool sys) {
                 case DT_REG: {
                     // zip file for installation
                     int len = strlen(fname);
-                    std::cout << fname << std::endl;
                     if (len > 4) {
                         char ext[5];
                         ext[0] = fname[len - 4];
