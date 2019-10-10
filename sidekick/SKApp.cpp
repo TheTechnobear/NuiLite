@@ -132,7 +132,7 @@ int SKApp::execShell(const std::string &cmd) {
 
 
 void SKApp::runScript(const std::string &root, const std::string &name, const std::string &cmd) {
-    std::string shcmd = root + "/" + name + "/" + cmd + " &";
+    std::string shcmd = "cd \"" + root + "/" + name + "\"; " + cmd + " &";
     std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
 }
@@ -154,7 +154,7 @@ void SKApp::runPd(const std::string &root, const std::string &name) {
         std::cout << "using cmd options file : " << pdOptsFile << " options : " << pdOpts << std::endl;
     }
 
-    std::string shcmd = "cd " + root + "/" + name + "; pd " + pdOpts + " main.pd &";
+    std::string shcmd = "cd \"" + root + "/" + name + "\"; pd " + pdOpts + " main.pd &";
     std::cout << "pd running : " << shcmd << std::endl;
     execShell(shcmd);
 }
@@ -162,7 +162,7 @@ void SKApp::runPd(const std::string &root, const std::string &name) {
 
 void SKApp::runZip(const std::string &root, const std::string &name) {
     std::string dir = name.substr(0, name.length() - 4);
-    std::string shcmd = "cd " + root + "; unzip " + name + "; rm " + name + "; cd " + dir + "; ./deploy.sh";
+    std::string shcmd = "cd \"" + root + "\"; unzip \"" + name + "\"; rm \"" + name + "\"; cd \"" + dir + "\"; ./deploy.sh";
     std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
     // reload menu, since new items will appear
@@ -181,7 +181,8 @@ void SKApp::runRefreshMenu() {
 
 int SKApp::checkFileExists(const std::string &filename) {
     struct stat st{};
-    int result = stat(filename.c_str(), &st);
+    std::string s = "\"" + filename + "\"";
+    int result = stat(s.c_str(), &st);
     return result == 0;
 }
 
@@ -230,7 +231,7 @@ void SKApp::activateItem() {
                 std::string prePatch;
                 if (checkFileExists(patchDir_ + "/" + item->name_ + "/pre-patch.sh")) prePatch = patchDir_ + "/" + item->name_ + "/pre-patch.sh";
                 else if (checkFileExists("./pre-patch.sh")) prePatch = "./pre-patch.sh";
-                if (prePatch.length() > 0) execShell(prePatch);
+                if (prePatch.length() > 0) execShell("\"" + prePatch + "\"");
 
                 if (item->type_ == MenuItem::PdPatch) {
                     runPd(patchDir_, item->name_);
@@ -241,7 +242,7 @@ void SKApp::activateItem() {
                 std::string postPatch;
                 if (checkFileExists(patchDir_ + "/" + item->name_ + "/post-patch.sh")) postPatch = patchDir_ + "/" + item->name_ + "/post-patch.sh";
                 else if (checkFileExists("./post-patch.sh")) postPatch = "./post-patch.sh";
-                if (postPatch.length() > 0) execShell(postPatch);
+                if (postPatch.length() > 0) execShell("\"" + postPatch + "\"");
 
                 break;
             }

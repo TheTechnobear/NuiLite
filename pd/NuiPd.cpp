@@ -40,7 +40,7 @@ void NuiPd_sendMsg(const char *sym, float v) {
 
 class NuiPdCallback : public NuiLite::NuiCallback {
 public:
-    NuiPdCallback(t_NuiPd *x) : x_(x) { ; }
+    explicit NuiPdCallback(t_NuiPd *x) : x_(x) {}
 
     void onButton(unsigned id, unsigned value) override;
     void onEncoder(unsigned id, int value) override;
@@ -84,7 +84,7 @@ void NuiPd_free(t_NuiPd *x) {
 }
 
 void *NuiPd_new(t_floatarg) {
-    t_NuiPd *x = (t_NuiPd *) pd_new(NuiPd_class);
+    auto *x = (t_NuiPd *) pd_new(NuiPd_class);
     x->device_ = std::make_shared<NuiLite::NuiDevice>();
     auto cb = std::make_shared<NuiPdCallback>(x);
     x->device_->addCallback(cb);
@@ -139,7 +139,7 @@ void NuiPd_displayPaint(t_NuiPd *obj) {
 void NuiPd_info(t_NuiPd *obj) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     NuiPd_sendMsg("nui_num_buttons", 3);
-    NuiPd_sendMsg("nui_num_encoders", obj->device_->numEncoders());
+    NuiPd_sendMsg("nui_num_encoders", (float) obj->device_->numEncoders());
 }
 
 // graphics
@@ -148,7 +148,7 @@ void NuiPd_clearRect(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t
     obj->device_->clearRect((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) w, (unsigned) h);
 }
 
-void NuiPd_drawText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
+void NuiPd_drawText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     if (argc < 4) {
         post("error: drawText clr x y string");
@@ -170,13 +170,16 @@ void NuiPd_drawText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
 
 
     std::string str;
-    for (int i = arg; i < argc; i++) {
-        t_atom *arg = argv + i;
-        if (arg->a_type == A_SYMBOL) {
-            t_symbol *sym = atom_getsymbol(arg);
+    for (unsigned i = arg; i < argc; i++) {
+        t_atom *targ = argv + i;
+        if (targ->a_type == A_SYMBOL) {
+            t_symbol *sym = atom_getsymbol(targ);
             str += sym->s_name;
-        }  else if (arg->a_type == A_FLOAT) {
-            str += std::to_string(atom_getfloat(arg));
+        } else if (targ->a_type == A_FLOAT) {
+            std::string fstr = std::to_string(atom_getfloat(targ));
+            fstr.erase(fstr.find_last_not_of('0') + 1, std::string::npos);
+            fstr.erase(fstr.find_last_not_of('.') + 1, std::string::npos);
+            str += fstr;
         }
 
         if (i != argc - 1) str += " ";
@@ -191,7 +194,7 @@ void NuiPd_drawPNG(t_NuiPd *obj, t_floatarg x, t_floatarg y, t_symbol *s) {
 
 
 // text displays
-void NuiPd_displayText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
+void NuiPd_displayText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     if (argc < 4) {
         post("error: displayText clr line col string");
@@ -213,13 +216,13 @@ void NuiPd_displayText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
 
 
     std::string str;
-    for (int i = arg; i < argc; i++) {
-        t_atom *arg = argv + i;
-        if (arg->a_type == A_SYMBOL) {
-            t_symbol *sym = atom_getsymbol(arg);
+    for (unsigned i = arg; i < argc; i++) {
+        t_atom *targ = argv + i;
+        if (targ->a_type == A_SYMBOL) {
+            t_symbol *sym = atom_getsymbol(targ);
             str += sym->s_name;
-        }  else if (arg->a_type == A_FLOAT) {
-            str += std::to_string(atom_getfloat(arg));
+        } else if (targ->a_type == A_FLOAT) {
+            str += std::to_string(atom_getfloat(targ));
         }
 
         if (i != argc - 1) str += " ";
