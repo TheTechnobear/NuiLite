@@ -2,13 +2,13 @@
 #X obj 76 75 loadbang;
 #X obj 358 162 r knob1;
 #X obj 358 196 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 5860 1;
+-1 -1 0 1;
 #X obj 421 196 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
 -1 -1 0 1;
 #X obj 482 196 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 4668 1;
+-1 -1 0 1;
 #X obj 544 196 vsl 15 128 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 6158 1;
+-1 -1 0 1;
 #X obj 421 162 r knob2;
 #X obj 482 162 r knob3;
 #X obj 544 162 r knob4;
@@ -223,7 +223,7 @@ from somewhere else (knobs.txt preset file or MIDI CC);
 #X obj 187 -6 r nui_encoder;
 #X obj 187 17 route 0 1 2 3;
 #X obj 83 121 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -8 0 10
--262144 -1 -1 472 256;
+-262144 -1 -1 0 256;
 #N canvas 0 54 450 300 encscale 0;
 #X obj 94 72 t b f;
 #X obj 94 94 f 0;
@@ -269,7 +269,7 @@ from somewhere else (knobs.txt preset file or MIDI CC);
 #X connect 7 0 0 0;
 #X restore 171 94 pd encscale;
 #X obj 265 120 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -8 0 10
--262144 -1 -1 376 256;
+-262144 -1 -1 0 256;
 #N canvas 0 54 450 300 encscale 0;
 #X obj 94 72 t b f;
 #X obj 94 94 f 0;
@@ -292,7 +292,7 @@ from somewhere else (knobs.txt preset file or MIDI CC);
 #X connect 7 0 0 0;
 #X restore 265 93 pd encscale;
 #X obj 359 115 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -8 0 10
--262144 -1 -1 496 256;
+-262144 -1 -1 0 256;
 #N canvas 0 54 450 300 encscale 0;
 #X obj 94 72 t b f;
 #X obj 94 94 f 0;
@@ -343,6 +343,9 @@ from somewhere else (knobs.txt preset file or MIDI CC);
 #X obj 954 -9 r funcBut;
 #X obj 940 41 == 0;
 #X obj 362 64 spigot 1;
+#X obj 509 15 loadbang;
+#X obj 509 38 delay 1;
+#X msg 509 61 512;
 #X connect 3 0 14 0;
 #X connect 4 0 18 0;
 #X connect 7 0 15 0;
@@ -383,6 +386,13 @@ from somewhere else (knobs.txt preset file or MIDI CC);
 #X connect 38 0 37 0;
 #X connect 39 0 40 1;
 #X connect 40 0 33 0;
+#X connect 41 0 42 0;
+#X connect 42 0 43 0;
+#X connect 43 0 32 0;
+#X connect 43 0 30 0;
+#X connect 43 0 28 0;
+#X connect 43 0 26 0;
+#X connect 43 0 34 0;
 #X restore 383 432 pd analog;
 #X text 355 333 stuff going out (from patch)...;
 #X text 293 8 Receives and sends signals to the Organelle hardware.
