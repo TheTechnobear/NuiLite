@@ -29,8 +29,6 @@
 #include <readerwriterqueue.h>
 
 
-#define FB_DEVICE "/dev/fb0"
-
 #ifndef SCREEN_FB_FMT
 #define SCREEN_FB_FMT CAIRO_FORMAT_RGB16_565
 #endif
@@ -114,9 +112,11 @@ private:
     bool keepRunning_;
 
     static constexpr unsigned MAX_EVENTS = 64;
-    static constexpr unsigned NUM_ENCODERS = 4;
+    static constexpr unsigned MAX_ENCODERS = 4;
     int keyFd_;
-    int encFd_[NUM_ENCODERS];
+    int encFd_[MAX_ENCODERS];
+    unsigned numEncoders_=4;
+    std::string fbDev_;
 
     cairo_surface_t *surfacefb_;
     cairo_t *crfb_;
@@ -199,7 +199,7 @@ void NuiDevice::drawText(unsigned clr, unsigned x, unsigned y, const std::string
 
 // fwd decl for helper functions
 extern void cairo_linuxfb_surface_destroy(void *device);
-extern cairo_surface_t *cairo_linuxfb_surface_create();
+extern cairo_surface_t *cairo_linuxfb_surface_create(const char* fbdev);
 extern int opengpio(const char *pathname, int flags);
 void setup_local_fonts(const char *);
 
@@ -262,11 +262,7 @@ bool NuiDeviceImpl_::buttonState(unsigned but) {
 
 
 unsigned NuiDeviceImpl_::numEncoders() {
-    struct stat fs;
-    if ((stat("/dev/input/by-path/platform-soc:knob4-event", &fs) == 0)) {
-        return 4;
-    }
-    return 3;
+    return numEncoders_;
 }
 
 
@@ -366,15 +362,15 @@ void *process_gpio_func(void *x) {
 
 void NuiDeviceImpl_::processGPIO() {
 
-    int encdir[NuiDeviceImpl_::NUM_ENCODERS] = {1, 1, 1, 1};
-    clock_t encnow[NUM_ENCODERS];
-    clock_t encprev[NUM_ENCODERS];
+    int encdir[NuiDeviceImpl_::MAX_ENCODERS] = {1, 1, 1, 1};
+//    clock_t encnow[MAX_ENCODERS];
+    clock_t encprev[MAX_ENCODERS];
     encprev[0] = encprev[1] = encprev[2] = encprev[3] = clock();
     struct input_event event;
 
     while (keepRunning_) {
 
-        struct pollfd fds[1 + NUM_ENCODERS];
+        struct pollfd fds[1 + MAX_ENCODERS];
 
         //FIXME only works if order of fd doesnt change
         // i.e key/enc 1 to 3 must open
@@ -384,7 +380,7 @@ void NuiDeviceImpl_::processGPIO() {
             fds[fdcount].events = POLLIN;
             fdcount++;
         }
-        for (auto i = 0; i < NUM_ENCODERS; i++) {
+        for (auto i = 0; i < numEncoders_; i++) {
             if (encFd_[i] > 0) {
                 fds[fdcount].fd = encFd_[i];
                 fds[fdcount].events = POLLIN;
@@ -413,7 +409,7 @@ void NuiDeviceImpl_::processGPIO() {
                 }
             }
 
-            for (auto n = 0; n < NUM_ENCODERS; n++) {
+            for (auto n = 0; n < numEncoders_; n++) {
                 if (fds[n + 1].revents & POLLIN) {
                     auto rd = read(encFd_[n], &event, sizeof(struct input_event));
                     if (rd < (int) sizeof(struct input_event)) {
@@ -446,12 +442,20 @@ void NuiDeviceImpl_::processGPIO() {
 
 void NuiDeviceImpl_::initGPIO() {
 
-    const char *enc_filenames[NUM_ENCODERS] = {"/dev/input/by-path/platform-soc:knob1-event",
+    const char *enc_filenames[MAX_ENCODERS] = {"/dev/input/by-path/platform-soc:knob1-event",
                                                "/dev/input/by-path/platform-soc:knob2-event",
                                                "/dev/input/by-path/platform-soc:knob3-event",
                                                "/dev/input/by-path/platform-soc:knob4-event"};
     keyFd_ = opengpio("/dev/input/by-path/platform-keys-event", O_RDONLY);
-    for (auto i = 0; i < NUM_ENCODERS; i++) {
+
+    struct stat fs;
+    numEncoders_ = 3;
+    if ((stat("/dev/input/by-path/platform-soc:knob4-event", &fs) == 0)) {
+        numEncoders_ = 4;
+    }
+
+
+    for (auto i = 0; i < numEncoders_; i++) {
         encFd_[i] = opengpio(enc_filenames[i], O_RDONLY);
     }
 
@@ -469,7 +473,13 @@ void NuiDeviceImpl_::deinitGPIO() {
 
 
 void NuiDeviceImpl_::initDisplay() {
-    surfacefb_ = cairo_linuxfb_surface_create();
+    fbDev_ = "/dev/fb0";
+    struct stat fs;
+    if ((stat("/dev/fb1", &fs) == 0)) {
+        fbDev_ = "/dev/fb0";
+    }
+
+    surfacefb_ = cairo_linuxfb_surface_create(fbDev_.c_str());
     crfb_ = cairo_create(surfacefb_);
 
     surface_ = cairo_image_surface_create(SCREEN_FMT, SCREEN_X, SCREEN_Y);
@@ -554,11 +564,11 @@ void cairo_linuxfb_surface_destroy(void *device) {
 }
 
 /* Create a cairo surface using the specified framebuffer */
-cairo_surface_t *cairo_linuxfb_surface_create() {
+cairo_surface_t *cairo_linuxfb_surface_create(const char* fbdev) {
     cairo_linuxfb_device_t *device;
     cairo_surface_t *surface;
 
-    const char *fb_name = FB_DEVICE;
+    const char *fb_name = fbdev;
 
     device = static_cast<cairo_linuxfb_device_t *>( malloc(sizeof(*device)));
     if (!device) {
