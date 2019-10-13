@@ -476,7 +476,7 @@ void NuiDeviceImpl_::initDisplay() {
     fbDev_ = "/dev/fb0";
     struct stat fs;
     if ((stat("/dev/fb1", &fs) == 0)) {
-        fbDev_ = "/dev/fb0";
+        fbDev_ = "/dev/fb1";
     }
 
     surfacefb_ = cairo_linuxfb_surface_create(fbDev_.c_str());
@@ -569,6 +569,7 @@ cairo_surface_t *cairo_linuxfb_surface_create(const char* fbdev) {
     cairo_surface_t *surface;
 
     const char *fb_name = fbdev;
+    fprintf(stderr, "using framebuffer %s\n", fbdev);
 
     device = static_cast<cairo_linuxfb_device_t *>( malloc(sizeof(*device)));
     if (!device) {
