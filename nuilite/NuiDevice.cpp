@@ -306,7 +306,7 @@ void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, cons
 
 void NuiDeviceImpl_::invertText(unsigned line) {
     unsigned x = 0;
-    unsigned y = line * 10 + 10;
+    unsigned y = (line * 10 + 10) + 1; // letters with drop
     cairo_set_source_rgb(cr_, 1., 1., 1.);
     cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
     cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
@@ -316,7 +316,7 @@ void NuiDeviceImpl_::invertText(unsigned line) {
 
 void NuiDeviceImpl_::clearText(unsigned clr, unsigned line) {
     unsigned x = 0;
-    unsigned y = line * 10 + 10;
+    unsigned y = (line * 10 + 10) + 1; // letters with drop
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
 //    cairo_text_extents_t extents;
 //    cairo_text_extents (cr_, "0", &extents);
