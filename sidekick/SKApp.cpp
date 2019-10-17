@@ -160,7 +160,7 @@ void SKApp::runPd(const std::string &root, const std::string &name) {
 }
 
 
-void SKApp::runZip(const std::string &root, const std::string &name) {
+void SKApp::runInstall(const std::string &root, const std::string &name) {
     std::string dir = name.substr(0, name.length() - 4);
     std::string shcmd = "cd \"" + root + "\"; unzip \"" + name + "\"; rm \"" + name + "\"; cd \"" + dir + "\"; ./deploy.sh";
     std::cout << "script running : " << shcmd << std::endl;
@@ -175,6 +175,34 @@ void SKApp::runRefreshMenu() {
     std::cout << "refresh menu" << std::endl;
     sidekickActive_ = true;
     reloadMenu();
+    displayMenu();
+}
+
+void SKApp::runRefreshSystem() {
+    std::cout << "refresh system" << std::endl;
+    sidekickActive_ = true;
+    // just in case, something has been manually added!
+    reloadMenu();
+
+    execShell("sudo apt update");
+
+    // now look for update files
+    for (const auto &mi:mainMenu_) {
+        std::string root;
+        if (mi->type_ == MenuItem::System) {
+            root = systemDir_;
+        } else {
+            root = patchDir_;
+        }
+        std::string updatefile = root + "/" + mi->name_ + "/update.sh";
+        if (checkFileExists(updatefile)) {
+            runScript(root, mi->name_, "update.sh");
+        }
+    }
+
+    // update sidekick afterwards, since it may restart sidekick
+    execShell("sudo apt install sidekick");
+
     displayMenu();
 }
 
@@ -197,7 +225,7 @@ void SKApp::displayMenu() {
 
     for (; mi != mainMenu_.end() && line < maxItems_; mi++) {
         std::string txt = (*mi)->name_;
-        if ((*mi)->type_ == MenuItem::ZipFile) txt = "Install " + txt;
+        if ((*mi)->type_ == MenuItem::InstallFile) txt = "Install " + txt;
         device_.displayText(15, line, 0, txt);
         if (idx == selIdx_) device_.invertText(line);
         line++;
@@ -245,12 +273,16 @@ void SKApp::activateItem() {
 
                 break;
             }
-            case MenuItem::ZipFile : {
-                runZip(patchDir_, item->name_);
+            case MenuItem::InstallFile : {
+                runInstall(patchDir_, item->name_);
                 break;
             }
             case MenuItem::RefreshMenu : {
                 runRefreshMenu();
+                break;
+            }
+            case MenuItem::RefreshSystem : {
+                runRefreshSystem();
                 break;
             }
             default:
@@ -282,8 +314,8 @@ void SKApp::reloadMenu() {
     mainMenu_.clear();
     loadMenu(patchDir_, false);
     loadMenu(systemDir_, true);
-    auto menuItem = std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu);
-    mainMenu_.push_back(menuItem);
+    mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem));
+    mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu));
 }
 
 
@@ -321,7 +353,7 @@ void SKApp::loadMenu(const std::string &dir, bool sys) {
                             ext[ci] = std::toupper(fname[len - 4 + ci]);
                         }
                         if (strcmp(ext, ".ZIP") == 0) {
-                            auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::ZipFile);
+                            auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::InstallFile);
                             mainMenu_.push_back(menuItem);
                         }
                     }
