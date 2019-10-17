@@ -101,7 +101,6 @@ void SKApp::run() {
                 sidekickActive_ = true;
                 if (sidekickActive_) {
                     std::cerr << "Sidekick activated,stop processes" << std::endl;
-                    displayMenu();
                     for (const auto &mi:mainMenu_) {
                         std::string root;
                         if (mi->type_ == MenuItem::System) {
@@ -111,11 +110,14 @@ void SKApp::run() {
                         }
                         std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
                         if (checkFileExists(stopfile)) {
-                            runScript(root, mi->name_, "stop.sh");
+                            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./stop.sh";
+                            execShell(shcmd);
                         } else if (mi->type_ == MenuItem::PdPatch) {
                             execShell("killall pd &");
                         }
                     }
+                    displayMenu();
+                    device_.displayPaint();
                 }
             }
         }
@@ -127,13 +129,13 @@ void SKApp::run() {
 
 
 int SKApp::execShell(const std::string &cmd) {
+    std::cout << "exec : " << cmd << std::endl;
     return system(cmd.c_str());
 }
 
 
 void SKApp::runScript(const std::string &root, const std::string &name, const std::string &cmd) {
     std::string shcmd = "cd \"" + root + "/" + name + "\"; ./" + cmd + " &";
-    std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
 }
 
