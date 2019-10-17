@@ -1,3 +1,3 @@
 #/bin/bash
-sudo apt install orac mec
+sudo apt install -y orac mec
 

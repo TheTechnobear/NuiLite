@@ -217,7 +217,7 @@ void SKApp::runRefreshSystem() {
     device_.clearText(0,2);
     device_.displayText(15,2,0, "Checking sidekick...");
     device_.displayPaint();
-    execShell("sudo apt install sidekick");
+    execShell("sudo apt install -y sidekick");
     device_.clearText(0,2);
     device_.displayText(15,2,0, "Completed");
     device_.displayPaint();
