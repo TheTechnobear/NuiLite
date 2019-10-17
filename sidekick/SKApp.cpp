@@ -348,6 +348,7 @@ void SKApp::reloadMenu() {
     loadMenu(systemDir_, true);
     mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem));
     mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu));
+    mainMenu_.push_back(std::make_shared<MenuItem>("Power OFF ", MenuItem::PowerOff));
 }
 
 
