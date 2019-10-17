@@ -124,6 +124,7 @@ private:
     cairo_t *cr_;
     std::vector<std::shared_ptr<NuiCallback>> callbacks_;
     moodycamel::ReaderWriterQueue<NuiEventMsg> eventQueue_;
+    bool dirty_=true;
 };
 
 //NuiDevice proxy
@@ -249,7 +250,7 @@ unsigned NuiDeviceImpl_::process(bool paint) {
             }
         }
     }
-    if (paint) displayPaint();
+    if (paint && dirty_) displayPaint();
     return 0;
 }
 
@@ -270,13 +271,14 @@ unsigned NuiDeviceImpl_::numEncoders() {
 
 void NuiDeviceImpl_::displayPaint() {
     cairo_paint(crfb_);
-
+    dirty_ = false;
 }
 
 void NuiDeviceImpl_::clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_rectangle(cr_, x, y, w, h);
     cairo_fill(cr_);
+    dirty_ = true;
 }
 
 
@@ -285,6 +287,7 @@ void NuiDeviceImpl_::drawText(unsigned clr, unsigned x, unsigned y, const std::s
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
+    dirty_ = true;
 }
 
 
@@ -292,6 +295,7 @@ void NuiDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr_);
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
@@ -302,6 +306,7 @@ void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, cons
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
     cairo_fill(cr_);
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::invertText(unsigned line) {
@@ -312,6 +317,7 @@ void NuiDeviceImpl_::invertText(unsigned line) {
     cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
     cairo_fill(cr_);
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::clearText(unsigned clr, unsigned line) {
@@ -323,6 +329,7 @@ void NuiDeviceImpl_::clearText(unsigned clr, unsigned line) {
 //    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
     cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
     cairo_fill(cr_);
+    dirty_ = true;
 }
 
 
@@ -345,6 +352,7 @@ void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename) {
     cairo_fill(cr_);
     cairo_set_source_surface(cr_, surface_, SCREEN_X, SCREEN_Y);
     cairo_surface_destroy(image);
+    dirty_ = true;
 }
 
 
@@ -507,6 +515,7 @@ void NuiDeviceImpl_::initDisplay() {
 
     cairo_set_source_rgb(cr_, 1, 1, 1); //!!
 
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::deinitDisplay() {
