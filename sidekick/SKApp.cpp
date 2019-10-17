@@ -240,7 +240,7 @@ void SKApp::activateItem() {
         device_.displayText(15, 0, 0, "Launch...");
         device_.displayText(15, 1, 0, item->name_);
         std::cerr << "launch : " << item->name_ << std::endl;
-        sleep(1);
+        device_.displayPaint();
         sidekickActive_ = false;
         switch (item->type_) {
             case MenuItem::System: {
