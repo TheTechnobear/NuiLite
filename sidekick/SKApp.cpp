@@ -184,6 +184,11 @@ void SKApp::runRefreshSystem() {
     // just in case, something has been manually added!
     reloadMenu();
 
+    device_.displayClear();
+    device_.displayText(15,0,0, "Checking for updates ...");
+    device_.displayText(15,2,0, "Updating repo...");
+    device_.displayPaint();
+
     execShell("sudo apt update");
 
     // now look for update files
@@ -196,12 +201,25 @@ void SKApp::runRefreshSystem() {
         }
         std::string updatefile = root + "/" + mi->name_ + "/update.sh";
         if (checkFileExists(updatefile)) {
-            runScript(root, mi->name_, "update.sh");
+            std::string txt = "Checking " + mi->name_ + " ...";
+            device_.clearText(0,2);
+            device_.displayText(15,2,0, txt);
+            device_.displayPaint();
+            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./update.sh";
+            std::cout << "update running : " << shcmd << std::endl;
+            execShell(shcmd);
         }
     }
 
     // update sidekick afterwards, since it may restart sidekick
+    device_.clearText(0,2);
+    device_.displayText(15,2,0, "Checking sidekick...");
+    device_.displayPaint();
     execShell("sudo apt install sidekick");
+    device_.clearText(0,2);
+    device_.displayText(15,2,0, "Completed");
+    device_.displayPaint();
+    sleep(1);
 
     displayMenu();
 }
