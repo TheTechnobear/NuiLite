@@ -226,6 +226,14 @@ void SKApp::runRefreshSystem() {
     displayMenu();
 }
 
+void SKApp::runPowerOff() {
+    device_.displayClear();
+    device_.displayText(15,0,0, "Powering Down...");
+    device_.displayPaint();
+    execShell("sudo poweroff");
+
+}
+
 
 int SKApp::checkFileExists(const std::string &filename) {
     struct stat st{};
@@ -303,6 +311,10 @@ void SKApp::activateItem() {
             }
             case MenuItem::RefreshSystem : {
                 runRefreshSystem();
+                break;
+            }
+            case MenuItem::PowerOff : {
+                runPowerOff();
                 break;
             }
             default:
