@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 2.8.11)
 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
+
 project(nuilite)
 
 set(PROJECT_NAME nuilite)
