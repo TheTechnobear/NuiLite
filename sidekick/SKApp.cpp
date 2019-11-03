@@ -101,7 +101,6 @@ void SKApp::run() {
                 sidekickActive_ = true;
                 if (sidekickActive_) {
                     std::cerr << "Sidekick activated,stop processes" << std::endl;
-                    displayMenu();
                     for (const auto &mi:mainMenu_) {
                         std::string root;
                         if (mi->type_ == MenuItem::System) {
@@ -111,11 +110,14 @@ void SKApp::run() {
                         }
                         std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
                         if (checkFileExists(stopfile)) {
-                            runScript(root, mi->name_, "stop.sh");
+                            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./stop.sh";
+                            execShell(shcmd);
                         } else if (mi->type_ == MenuItem::PdPatch) {
                             execShell("killall pd &");
                         }
                     }
+                    displayMenu();
+                    device_.displayPaint();
                 }
             }
         }
@@ -127,13 +129,13 @@ void SKApp::run() {
 
 
 int SKApp::execShell(const std::string &cmd) {
+    std::cout << "exec : " << cmd << std::endl;
     return system(cmd.c_str());
 }
 
 
 void SKApp::runScript(const std::string &root, const std::string &name, const std::string &cmd) {
     std::string shcmd = "cd \"" + root + "/" + name + "\"; ./" + cmd + " &";
-    std::cout << "script running : " << shcmd << std::endl;
     execShell(shcmd);
 }
 
@@ -184,6 +186,11 @@ void SKApp::runRefreshSystem() {
     // just in case, something has been manually added!
     reloadMenu();
 
+    device_.displayClear();
+    device_.displayText(15,0,0, "Checking for updates ...");
+    device_.displayText(15,2,0, "Updating repo...");
+    device_.displayPaint();
+
     execShell("sudo apt update");
 
     // now look for update files
@@ -196,14 +203,35 @@ void SKApp::runRefreshSystem() {
         }
         std::string updatefile = root + "/" + mi->name_ + "/update.sh";
         if (checkFileExists(updatefile)) {
-            runScript(root, mi->name_, "update.sh");
+            std::string txt = "Checking " + mi->name_ + " ...";
+            device_.clearText(0,2);
+            device_.displayText(15,2,0, txt);
+            device_.displayPaint();
+            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./update.sh";
+            std::cout << "update running : " << shcmd << std::endl;
+            execShell(shcmd);
         }
     }
 
     // update sidekick afterwards, since it may restart sidekick
-    execShell("sudo apt install sidekick");
+    device_.clearText(0,2);
+    device_.displayText(15,2,0, "Checking sidekick...");
+    device_.displayPaint();
+    execShell("sudo apt install -y sidekick");
+    device_.clearText(0,2);
+    device_.displayText(15,2,0, "Completed");
+    device_.displayPaint();
+    sleep(1);
 
     displayMenu();
+}
+
+void SKApp::runPowerOff() {
+    device_.displayClear();
+    device_.displayText(15,0,0, "Powering Down...");
+    device_.displayPaint();
+    execShell("sudo poweroff");
+
 }
 
 
@@ -285,6 +313,10 @@ void SKApp::activateItem() {
                 runRefreshSystem();
                 break;
             }
+            case MenuItem::PowerOff : {
+                runPowerOff();
+                break;
+            }
             default:
                 break;
         }
@@ -316,6 +348,7 @@ void SKApp::reloadMenu() {
     loadMenu(systemDir_, true);
     mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem));
     mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu));
+    mainMenu_.push_back(std::make_shared<MenuItem>("Power OFF ", MenuItem::PowerOff));
 }
 
 

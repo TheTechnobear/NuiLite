@@ -28,7 +28,8 @@ private:
             InstallFile,
             System,
             RefreshMenu,
-            RefreshSystem
+            RefreshSystem,
+            PowerOff
         } type_;
 
         explicit MenuItem(const std::string &n, MenuItem::Type t) : name_(n), type_(t) { ; }
@@ -42,6 +43,7 @@ private:
     void runInstall(const std::string &root, const std::string &name);
     void runRefreshMenu();
     void runRefreshSystem();
+    void runPowerOff();
 
     static int checkFileExists(const std::string &filename);
     void displayMenu();
