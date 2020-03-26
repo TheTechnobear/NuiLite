@@ -104,12 +104,13 @@ public:
     void gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h);
     void gInvert();
     void gText(unsigned clr, unsigned x, unsigned y, const std::string &str);
-    void gWaveform(unsigned clr, unsigned wave[]);
-    void gInvertArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
+    void gWaveform(unsigned clr, const std::vector<unsigned>& wave);
+    void gInvertArea(unsigned x, unsigned y, unsigned w, unsigned h);
     void gPng(unsigned x, unsigned y, const char *filename);
 
     void textLine(unsigned clr, unsigned line, unsigned col, const std::string &str);
     void invertLine(unsigned line);
+    void clearLine(unsigned clr, unsigned line);
 
     // text functions 
     void clearText(unsigned clr, unsigned line);
@@ -193,22 +194,22 @@ void NuiDevice::displayPaint() {
 
 
 void NuiDevice::gClear(unsigned clr) {
-    imp_->gClear(clr);
+    impl_->gClear(clr);
 }
 
 
 void NuiDevice::gSetPixel(unsigned clr,unsigned x, unsigned y) {
-    imp_->gSetPixel(unsigned clr,unsigned x, unsigned y);
+    impl_->gSetPixel(clr,x, y);
 }
 
 
 void NuiDevice::gFillArea(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h) {
-    imp_->gClear(clr);
+    impl_->gClear(clr);
 }
 
 
-void NuiDevice::gGircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
-    impl_->gGircle( clr, x,  y,  r);
+void NuiDevice::gCircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+    impl_->gCircle( clr, x,  y,  r);
 }
 
 
@@ -231,22 +232,16 @@ void NuiDevice::gInvert() {
     impl_->gInvert();
 }
 
-
-void NuiDevice::gCharacter(unsigned clr,unsigned x1, unsigned y1, char c) {
-
+void NuiDevice::gText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
+    impl_->gText(clr, x, y, str);
 }
 
-void NuiDevice::gPrintln(unsigned clr, unsigned x, unsigned y, const std::string &str) {
-    
-}
-
-
-void NuiDevice::gWaveform(unsigned clr, unsigned wave[]) {
+void NuiDevice::gWaveform(unsigned clr, const std::vector<unsigned>& wave) {
     impl_->gWaveform(clr,wave);
 }
 
 void NuiDevice::gInvertArea(unsigned x, unsigned y,unsigned w, unsigned h) {
-    impl_->gInvertArea( clr, x , y , w, h);
+    impl_->gInvertArea(x , y , w, h);
 }
 
 void NuiDevice::gPng(unsigned x, unsigned y, const char *filename) {
@@ -376,12 +371,12 @@ void NuiDeviceImpl_::displayClear() {
 }
 
 void NuiDeviceImpl_::gClear(unsigned clr) {
-    gFillArea(clr,0,0,SCREEN_X,SCREEN_Y)
+    gFillArea(clr,0,0,SCREEN_X,SCREEN_Y);
 }
 
 void NuiDeviceImpl_::gSetPixel(unsigned clr,unsigned x, unsigned y) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_rectangle (cr, x, y, 1, 1);
+    cairo_rectangle (cr_, x, y, 1, 1);
     cairo_fill(cr_);
     dirty_ = true;
 }
@@ -395,16 +390,17 @@ void NuiDeviceImpl_::gFillArea(unsigned clr, unsigned x, unsigned y, unsigned w,
 }
 
 
-void NuiDeviceImpl_::gGircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+void NuiDeviceImpl_::gCircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+    cairo_arc(cr_, x, y, r, 0, 2 * M_PI);
+    cairo_stroke(cr_);
     dirty_ = true;
 }
 
 
 void NuiDeviceImpl_::gFilledCircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+    cairo_arc(cr_, x, y, r, 0, 2 * M_PI);
     cairo_fill(cr_);
     dirty_ = true;
 }
@@ -412,29 +408,39 @@ void NuiDeviceImpl_::gFilledCircle(unsigned clr,unsigned x, unsigned y, unsigned
 
 void NuiDeviceImpl_::gLine(unsigned clr,unsigned x1, unsigned y1, unsigned x2, unsigned y2) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_move_to(cr,x1,y1);
-    cairo_line_to(cr,x2,y2);
+    cairo_move_to(cr_,x1,y1);
+    cairo_line_to(cr_,x2,y2);
+    cairo_stroke(cr_);
+    dirty_ = true;
 }
 
 
 void NuiDeviceImpl_::gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h) {
     cairo_rectangle(cr_, x, y, w, h);
+    cairo_stroke(cr_);
     dirty_ = true;
 }
 
 
 void NuiDeviceImpl_::gInvert() {
-    cairo_set_source_rgb(cr_, 1., 1., 1.);
-    cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
-    cairo_rectangle(cr_, 0, 0, SCREEN_X, -SCREEN_Y);
-    cairo_fill(cr_);
-    cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
-    dirty_ = true;
+    gInvertArea(0,0,SCREEN_X, SCREEN_Y);
 }
 
 
-void NuiDeviceImpl_::gWaveform(unsigned clr, unsigned wave[]) {
-
+void NuiDeviceImpl_::gWaveform(unsigned clr, const std::vector<unsigned>& wave) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    int x = 0;
+    for(auto y : wave) {
+        if(x==0) {
+    	    cairo_move_to(cr_, x, y);
+	} else {
+    	    cairo_line_to(cr_, x, y);
+	}
+	x++;
+	if(x==128) break;
+    }
+    cairo_stroke(cr_);
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::gText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
@@ -449,7 +455,7 @@ void NuiDeviceImpl_::gText(unsigned clr, unsigned x, unsigned y, const std::stri
 void NuiDeviceImpl_::gInvertArea(unsigned x, unsigned y,unsigned w, unsigned h) {
     cairo_set_source_rgb(cr_, 1., 1., 1.);
     cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
-    cairo_rectangle(cr_, x, y, w, -h);
+    cairo_rectangle(cr_, x, y, w, h);
     cairo_fill(cr_);
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
     dirty_ = true;
@@ -463,8 +469,6 @@ void NuiDeviceImpl_::gPng(unsigned x, unsigned y, const char *filename) {
         fprintf(stderr, "failed to load: %s\n", filename);
         return;
     }
-    fprintf(stderr, "loaded: %s\n", filename);
-
     img_w = cairo_image_surface_get_width(image);
     img_h = cairo_image_surface_get_height(image);
 
@@ -486,7 +490,7 @@ void NuiDeviceImpl_::textLine(unsigned clr, unsigned line, unsigned col, const s
 void NuiDeviceImpl_::invertLine(unsigned line) {
     unsigned x = 0;
     unsigned y = (line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE) + SCREEN_CHAR_DROP; // letters with drop
-    gInvertArea(x,y,SCREEN_X, SCREEN_LINE_SIZE);
+    gInvertArea(x,y,SCREEN_X, -SCREEN_LINE_SIZE);
     dirty_ = true;
 }
 

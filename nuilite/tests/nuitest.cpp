@@ -31,9 +31,8 @@ void test9();
 
 static constexpr unsigned  NTESTS=10;
 
-typedef void (*pTestFunc)(void);
 
-void pTestFunc tests[NTESTS] = {
+void (*tests[NTESTS])(void) = {
     test0,
     test1,
     test2,
@@ -52,14 +51,16 @@ static int testIdx=0;
 void nextTest() {
     testIdx++;
     testIdx = testIdx >= NTESTS ? testIdx = 0 : testIdx; 
-    tests[textIdx]();
+    fprintf(stderr, "test %d\n", testIdx);
+    (*tests[testIdx])();
 }
 
 void prevTest() {
     device.displayClear();
     testIdx--;
     testIdx = testIdx < 0 ? NTESTS - 1 : testIdx; 
-    tests[textIdx]();
+    fprintf(stderr, "test %d\n", testIdx);
+    (*tests[testIdx])();
 }
 
 
@@ -67,10 +68,6 @@ void prevTest() {
 class TestCallback : public NuiLite::NuiCallback {
 public:
     void onButton(unsigned id, unsigned value) override {
-        char buf[100];
-        sprintf(buf, "Button %d : %d", id, value);
-        device.clearText(0,0);
-        device.displayText(15, 0, 1, buf);
         fprintf(stderr, "button %d : %d\n", id, value);
         if (value) {
             switch (id) {
@@ -129,7 +126,7 @@ int main(int argc, const char *argv[]) {
               << std::endl;
 
     device.displayClear();
-    tests[0]();
+    (*tests[0])();
 
     while (keepRunning) {
         device.process();
@@ -148,14 +145,14 @@ void test0() {
     device.displayClear();
 
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 0");
+    device.textLine(15,0,0,"test 0");
     device.gPng(0, 0, "./orac.png");
 
 }
 
 void test1() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 1");
+    device.textLine(15,0,0,"test 1");
     device.clearText(1, 0);
     device.displayText(15, 0, 0, "a1 : BasicPoly > main");
 }
@@ -164,52 +161,62 @@ void test2() {
     device.displayClear();
 
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 2");
-    device.displayLine(15,1,"line 1");
-    device.displayLine(15,2,"line 2");
-    device.displayLine(15,3,"line 3");
-    device.displayLine(15,4,"line 4");
+    device.textLine(15,0,0,"test 2 - text line");
+    device.textLine(15,1,0,"line 1");
+    device.textLine(15,2,0,"line 2");
+    device.textLine(15,3,0,"line 3");
+    device.textLine(15,4,0,"line 4");
 }
 
 void test3() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 3");
-    device.invertLine(15,1);
-    device.clearLine(15,2);
+    device.textLine(15,0,0,"test 3 - inv/clr line");
+    device.invertLine(1);
+    device.clearLine(0,2);
 }
 
 void test4() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 4");
+    device.textLine(15,0,0,"test 4 0 - gTest");
 
-    device.gText(15,32, 32, "@ 32 32")
+    device.gText(15,32, 32, "@ 32 32");
 }
 
 void test5() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 5");
-    device.gRectangle(15, 5, 5 , 40, 40 )
+    device.textLine(15,0,0,"test 5 - gRectangel");
+    device.gRectangle(15, 5, 5 , 40, 40 );
 }
 
 void test6() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 6");
-    device.gCircle(15, 64, 32, 10)
+    device.textLine(15,0,0,"test 6 - gCircle");
+    device.gCircle(15, 64, 32, 10);
 }
 
 void test7() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 7");
-    device.gFilledCircle(15, 64, 32, 10)
+    device.textLine(15,0,0,"test 7 - gFilledCircle");
+    device.gFilledCircle(15, 64, 32, 10);
 }
 
 void test8() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 8");
-
+    device.textLine(15,0,0,"test 8 - gLine");
+    device.gLine(15, 0,0 ,64, 32);
 }
 
+#include <math.h>
+#include <vector>
 void test9() {
     device.clearLine(0,0);
-    device.displayLine(15,0,"test 9");
+    device.textLine(15,0,0,"test 9");
+    std::vector<unsigned> wave;
+    for(int x=0;x<127;x++) {
+	    double i = float(x) *  ( (2.0 * M_PI) / 127.0);
+	    unsigned y = unsigned ((sin(i) * 15.0) + 25.0);
+	    wave.push_back(y);
+    }
+    device.gWaveform(15,wave);
+    device.gInvert();
 }

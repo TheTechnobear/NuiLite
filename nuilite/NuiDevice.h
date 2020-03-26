@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <string>
 #include <memory>
 
@@ -43,9 +44,9 @@ public:
     void gLine(unsigned clr,unsigned x1, unsigned y1, unsigned x2, unsigned y2);
     void gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h);
     void gInvert();
-    void gPrintln(unsigned clr, unsigned x, unsigned y, const std::string &str);
-    void gWaveform(unsigned clr, unsigned wave[]);
-    void gInvertArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
+    void gText(unsigned clr, unsigned x, unsigned y, const std::string &str);
+    void gWaveform(unsigned clr, const std::vector<unsigned>& wave); // 128 values, of 0..64
+    void gInvertArea(unsigned x, unsigned y, unsigned w, unsigned h);
     void gPng(unsigned x, unsigned y, const char *filename);
 
     void textLine(unsigned clr, unsigned line, unsigned col, const std::string &str);
