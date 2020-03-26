@@ -18,6 +18,51 @@ void intHandler(int dummy) {
     keepRunning = false;
 }
 
+void test0();
+void test1();
+void test2();
+void test3();
+void test4();
+void test5();
+void test6();
+void test7();
+void test8();
+void test9();
+
+static constexpr unsigned  NTESTS=10;
+
+typedef void (*pTestFunc)(void);
+
+void pTestFunc tests[NTESTS] = {
+    test0,
+    test1,
+    test2,
+    test3,
+    test4,
+    test5,
+    test6,
+    test7,
+    test8,
+    test9
+};
+
+
+static int testIdx=0;
+
+void nextTest() {
+    testIdx++;
+    testIdx = testIdx >= NTESTS ? testIdx = 0 : testIdx; 
+    tests[textIdx]();
+}
+
+void prevTest() {
+    device.displayClear();
+    testIdx--;
+    testIdx = testIdx < 0 ? NTESTS - 1 : testIdx; 
+    tests[textIdx]();
+}
+
+
 
 class TestCallback : public NuiLite::NuiCallback {
 public:
@@ -30,16 +75,14 @@ public:
         if (value) {
             switch (id) {
                 case 0 : {
-                    device.clearText(0, 2);
-                    device.displayText(15, 2, 0, "hello");
-                    device.displayText(15, 2, 25, "world");
+                    device.displayClear();
                     break;
                 }
                 case 1 :
-                    device.clearText(0, 2);
+                    prevTest();
                     break;
                 case 2 :
-                    device.invertText(2);
+                    nextTest();
                     break;
                 default:
                     break;
@@ -77,30 +120,16 @@ int main(int argc, const char *argv[]) {
     device.start();
 
     signal(SIGINT, intHandler);
-    device.displayClear();
-
-
-    device.drawPNG(0, 0, "./orac.png");
-    device.clearText(1, 0);
-    device.displayText(15, 0, 0, "a1 : BasicPoly > main");
-
-    /*
-    device.clearRect(0,0, 128,10,1);
-    device.drawText(0,8,"a1 : BasicPoly > main",15);
-    funcParam(0,0,"Transpose","12     st");
-    funcParam(1,0,"Cutoff","15000 hz");
-    funcParam(0,1,"Shape","33",true);
-    funcParam(1,1,"Envelope","58     %");
-
-    */
 
     std::cout << "started test" << std::endl;
-
     std::cout << "buttons : "
               << device.buttonState(0)
               << device.buttonState(1)
               << device.buttonState(2)
               << std::endl;
+
+    device.displayClear();
+    tests[0]();
 
     while (keepRunning) {
         device.process();
@@ -109,4 +138,78 @@ int main(int argc, const char *argv[]) {
     std::cout << "stopping test" << std::endl;
     device.stop();
     return 0;
+}
+
+
+
+/// tests
+
+void test0() {
+    device.displayClear();
+
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 0");
+    device.gPng(0, 0, "./orac.png");
+
+}
+
+void test1() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 1");
+    device.clearText(1, 0);
+    device.displayText(15, 0, 0, "a1 : BasicPoly > main");
+}
+
+void test2() {
+    device.displayClear();
+
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 2");
+    device.displayLine(15,1,"line 1");
+    device.displayLine(15,2,"line 2");
+    device.displayLine(15,3,"line 3");
+    device.displayLine(15,4,"line 4");
+}
+
+void test3() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 3");
+    device.invertLine(15,1);
+    device.clearLine(15,2);
+}
+
+void test4() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 4");
+
+    device.gText(15,32, 32, "@ 32 32")
+}
+
+void test5() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 5");
+    device.gRectangle(15, 5, 5 , 40, 40 )
+}
+
+void test6() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 6");
+    device.gCircle(15, 64, 32, 10)
+}
+
+void test7() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 7");
+    device.gFilledCircle(15, 64, 32, 10)
+}
+
+void test8() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 8");
+
+}
+
+void test9() {
+    device.clearLine(0,0);
+    device.displayLine(15,0,"test 9");
 }

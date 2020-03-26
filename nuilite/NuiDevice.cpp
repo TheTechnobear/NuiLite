@@ -15,6 +15,7 @@
 #include <cairo.h>
 #include <cairo-ft.h>
 
+#include <math.h>
 // gpio
 #include <unistd.h>
 #include <stdint.h>
@@ -49,7 +50,13 @@
 #define SCREEN_SCALE 1.0
 #endif
 
-#define NUM_FONTS 67
+
+static constexpr unsigned SCREEN_LINE_SIZE=10;
+static constexpr unsigned SCREEN_CHAR_DROP=1;
+
+
+static constexpr unsigned NUM_FONTS=67;
+
 static cairo_font_face_t *ct[NUM_FONTS];
 
 static float colours[16] =
@@ -87,15 +94,25 @@ public:
     void displayClear();
     void displayPaint();
 
-    // text functions 
-    void displayText(unsigned clr, unsigned line, unsigned col, const std::string &str);
-    void clearText(unsigned clr, unsigned line);
-    void invertText(unsigned line);
 
-    // draw functions
-    void clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
-    void drawText(unsigned clr, unsigned x, unsigned y, const std::string &str);
-    void drawPNG(unsigned x, unsigned y, const char *filename);
+    void gClear(unsigned clr);
+    void gSetPixel(unsigned clr,unsigned x, unsigned y );
+    void gFillArea(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h);
+    void gCircle(unsigned clr,unsigned x, unsigned y, unsigned r);
+    void gFilledCircle(unsigned clr,unsigned x, unsigned y, unsigned r);
+    void gLine(unsigned clr,unsigned x1, unsigned y1, unsigned x2, unsigned y2);
+    void gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h);
+    void gInvert();
+    void gText(unsigned clr, unsigned x, unsigned y, const std::string &str);
+    void gWaveform(unsigned clr, unsigned wave[]);
+    void gInvertArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h);
+    void gPng(unsigned x, unsigned y, const char *filename);
+
+    void textLine(unsigned clr, unsigned line, unsigned col, const std::string &str);
+    void invertLine(unsigned line);
+
+    // text functions 
+    void clearText(unsigned clr, unsigned line);
 
     // public but not part of interface!
     void processGPIO();
@@ -173,28 +190,105 @@ void NuiDevice::displayPaint() {
     impl_->displayPaint();
 }
 
-void NuiDevice::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
-    impl_->displayText(clr, line, col, str);
+
+
+void NuiDevice::gClear(unsigned clr) {
+    imp_->gClear(clr);
 }
 
-void NuiDevice::invertText(unsigned line) {
-    impl_->invertText(line);
+
+void NuiDevice::gSetPixel(unsigned clr,unsigned x, unsigned y) {
+    imp_->gSetPixel(unsigned clr,unsigned x, unsigned y);
 }
 
-void NuiDevice::clearText(unsigned clr, unsigned line) {
-    impl_->clearText(clr, line);
+
+void NuiDevice::gFillArea(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h) {
+    imp_->gClear(clr);
 }
 
+
+void NuiDevice::gGircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+    impl_->gGircle( clr, x,  y,  r);
+}
+
+
+void NuiDevice::gFilledCircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+    impl_->gFilledCircle( clr, x,  y,  r);
+}
+
+
+void NuiDevice::gLine(unsigned clr,unsigned x1, unsigned y1, unsigned x2, unsigned y2) {
+    impl_->gLine( clr, x1,  y1,  x2,  y2);
+}
+
+
+void NuiDevice::gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h) {
+    impl_->gRectangle( clr, x , y , w, h);
+}
+
+
+void NuiDevice::gInvert() {
+    impl_->gInvert();
+}
+
+
+void NuiDevice::gCharacter(unsigned clr,unsigned x1, unsigned y1, char c) {
+
+}
+
+void NuiDevice::gPrintln(unsigned clr, unsigned x, unsigned y, const std::string &str) {
+    
+}
+
+
+void NuiDevice::gWaveform(unsigned clr, unsigned wave[]) {
+    impl_->gWaveform(clr,wave);
+}
+
+void NuiDevice::gInvertArea(unsigned x, unsigned y,unsigned w, unsigned h) {
+    impl_->gInvertArea( clr, x , y , w, h);
+}
+
+void NuiDevice::gPng(unsigned x, unsigned y, const char *filename) {
+    impl_->gPng(x , y, filename);
+}
+
+void NuiDevice::textLine(unsigned clr, unsigned line, unsigned col, const std::string &str) {
+    impl_->textLine(clr, line, col, str);
+}
+
+void NuiDevice::clearLine(unsigned clr, unsigned line) {
+    impl_->clearLine(clr, line);
+}
+
+void NuiDevice::invertLine(unsigned line) {
+    impl_->invertLine(line);
+}
+
+
+// old api, for backwards compat only - depreciated! 
 void NuiDevice::drawPNG(unsigned x, unsigned y, const char *filename) {
-    impl_->drawPNG(x, y, filename);
+    gPng(x, y, filename);
 }
 
 void NuiDevice::clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
-    impl_->clearRect(clr, x, y, w, h);
+    gFillArea(clr,x,y,w,h);
 }
 
 void NuiDevice::drawText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
-    impl_->drawText(clr, x, y, str);
+    gText(clr, x, y, str);
+}
+
+void NuiDevice::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
+    textLine(clr, line, col, str);
+}
+
+void NuiDevice::invertText(unsigned line) {
+    invertLine(line);
+}
+
+void NuiDevice::clearText(unsigned clr, unsigned line) {
+    clearLine(clr, line);
 }
 
 
@@ -274,23 +368,6 @@ void NuiDeviceImpl_::displayPaint() {
     dirty_ = false;
 }
 
-void NuiDeviceImpl_::clearRect(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
-    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_rectangle(cr_, x, y, w, h);
-    cairo_fill(cr_);
-    dirty_ = true;
-}
-
-
-void NuiDeviceImpl_::drawText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
-    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_move_to(cr_, x, y);
-    cairo_show_text(cr_, str.c_str());
-    cairo_fill(cr_);
-    dirty_ = true;
-}
-
-
 void NuiDeviceImpl_::displayClear() {
     cairo_set_operator(cr_, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr_);
@@ -298,10 +375,69 @@ void NuiDeviceImpl_::displayClear() {
     dirty_ = true;
 }
 
-void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, const std::string &str) {
-    unsigned x = col * 4;
-    unsigned y = line * 10 + 10;
+void NuiDeviceImpl_::gClear(unsigned clr) {
+    gFillArea(clr,0,0,SCREEN_X,SCREEN_Y)
+}
 
+void NuiDeviceImpl_::gSetPixel(unsigned clr,unsigned x, unsigned y) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_rectangle (cr, x, y, 1, 1);
+    cairo_fill(cr_);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gFillArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_rectangle(cr_, x, y, w, -h);
+    cairo_fill(cr_);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gGircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gFilledCircle(unsigned clr,unsigned x, unsigned y, unsigned r) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+    cairo_fill(cr_);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gLine(unsigned clr,unsigned x1, unsigned y1, unsigned x2, unsigned y2) {
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    cairo_move_to(cr,x1,y1);
+    cairo_line_to(cr,x2,y2);
+}
+
+
+void NuiDeviceImpl_::gRectangle(unsigned clr,unsigned x, unsigned y, unsigned w, unsigned h) {
+    cairo_rectangle(cr_, x, y, w, h);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gInvert() {
+    cairo_set_source_rgb(cr_, 1., 1., 1.);
+    cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
+    cairo_rectangle(cr_, 0, 0, SCREEN_X, -SCREEN_Y);
+    cairo_fill(cr_);
+    cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
+    dirty_ = true;
+}
+
+
+void NuiDeviceImpl_::gWaveform(unsigned clr, unsigned wave[]) {
+
+}
+
+void NuiDeviceImpl_::gText(unsigned clr, unsigned x, unsigned y, const std::string &str) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
     cairo_move_to(cr_, x, y);
     cairo_show_text(cr_, str.c_str());
@@ -309,31 +445,17 @@ void NuiDeviceImpl_::displayText(unsigned clr, unsigned line, unsigned col, cons
     dirty_ = true;
 }
 
-void NuiDeviceImpl_::invertText(unsigned line) {
-    unsigned x = 0;
-    unsigned y = (line * 10 + 10) + 1; // letters with drop
+
+void NuiDeviceImpl_::gInvertArea(unsigned x, unsigned y,unsigned w, unsigned h) {
     cairo_set_source_rgb(cr_, 1., 1., 1.);
     cairo_set_operator(cr_, CAIRO_OPERATOR_DIFFERENCE);
-    cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
+    cairo_rectangle(cr_, x, y, w, -h);
     cairo_fill(cr_);
     cairo_set_operator(cr_, CAIRO_OPERATOR_OVER);
     dirty_ = true;
 }
 
-void NuiDeviceImpl_::clearText(unsigned clr, unsigned line) {
-    unsigned x = 0;
-    unsigned y = (line * 10 + 10) + 1; // letters with drop
-    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-//    cairo_text_extents_t extents;
-//    cairo_text_extents (cr_, "0", &extents);
-//    cairo_rectangle(cr_,x,y,(extents.width+extents.x_bearing)*str.size()+1 ,extents.y_bearing);
-    cairo_rectangle(cr_, x, y + 1, SCREEN_X, -10);
-    cairo_fill(cr_);
-    dirty_ = true;
-}
-
-
-void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename) {
+void NuiDeviceImpl_::gPng(unsigned x, unsigned y, const char *filename) {
     int img_w, img_h;
 
     auto image = cairo_image_surface_create_from_png(filename);
@@ -355,11 +477,28 @@ void NuiDeviceImpl_::drawPNG(unsigned x, unsigned y, const char *filename) {
     dirty_ = true;
 }
 
+void NuiDeviceImpl_::textLine(unsigned clr, unsigned line, unsigned col, const std::string &str) {
+    unsigned x = col * 4;
+    unsigned y = line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE;
+    gText(clr,x,y,str);
+}
+
+void NuiDeviceImpl_::invertLine(unsigned line) {
+    unsigned x = 0;
+    unsigned y = (line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE) + SCREEN_CHAR_DROP; // letters with drop
+    gInvertArea(x,y,SCREEN_X, SCREEN_LINE_SIZE);
+    dirty_ = true;
+}
+
+void NuiDeviceImpl_::clearLine(unsigned clr, unsigned line) {
+    unsigned x = 0;
+    unsigned y = (line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE) + SCREEN_CHAR_DROP; // letters with drop
+    cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
+    gFillArea(clr,x,y,SCREEN_X, SCREEN_LINE_SIZE);
+}
 
 
 //////  ENCODER AND KEY HANDLING //////////////////////////////////////
-
-
 
 void *process_gpio_func(void *x) {
     auto pThis = static_cast<NuiDeviceImpl_ *>(x);
