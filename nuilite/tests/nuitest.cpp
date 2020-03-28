@@ -183,8 +183,9 @@ void test4() {
 
 void test5() {
     device.clearLine(0, 0);
-    device.textLine(15, 0, 0, "test 5 - gRectangel");
+    device.textLine(15, 0, 0, "test 5 - gRectangle");
     device.gRectangle(15, 5, 5, 40, 40);
+    device.gFillArea(15, 45, 45, 20, 20);
 }
 
 void test6() {

@@ -203,7 +203,7 @@ void NuiDevice::gSetPixel(unsigned clr, unsigned x, unsigned y) {
 
 
 void NuiDevice::gFillArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
-    impl_->gClear(clr);
+    impl_->gFillArea(clr, x, y, w, h);
 }
 
 
@@ -386,7 +386,7 @@ void NuiDeviceImpl_::gSetPixel(unsigned clr, unsigned x, unsigned y) {
 
 void NuiDeviceImpl_::gFillArea(unsigned clr, unsigned x, unsigned y, unsigned w, unsigned h) {
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    cairo_rectangle(cr_, x, y, w, -h);
+    cairo_rectangle(cr_, x, y, w, h);
     cairo_fill(cr_);
     dirty_ = true;
 }
@@ -492,7 +492,7 @@ void NuiDeviceImpl_::textLine(unsigned clr, unsigned line, unsigned col, const s
 void NuiDeviceImpl_::invertLine(unsigned line) {
     unsigned x = 0;
     unsigned y = (line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE) + SCREEN_CHAR_DROP; // letters with drop
-    gInvertArea(x, y, SCREEN_X, -SCREEN_LINE_SIZE);
+    gInvertArea(x, y - SCREEN_LINE_SIZE, SCREEN_X, SCREEN_LINE_SIZE);
     dirty_ = true;
 }
 
@@ -500,7 +500,7 @@ void NuiDeviceImpl_::clearLine(unsigned clr, unsigned line) {
     unsigned x = 0;
     unsigned y = (line * SCREEN_LINE_SIZE + SCREEN_LINE_SIZE) + SCREEN_CHAR_DROP; // letters with drop
     cairo_set_source_rgb(cr_, colours[clr], colours[clr], colours[clr]);
-    gFillArea(clr, x, y, SCREEN_X, SCREEN_LINE_SIZE);
+    gFillArea(clr, x, y - SCREEN_LINE_SIZE, SCREEN_X, SCREEN_LINE_SIZE);
 }
 
 
