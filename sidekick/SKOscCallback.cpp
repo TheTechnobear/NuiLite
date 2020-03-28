@@ -27,7 +27,7 @@ void SKOscCallback::ProcessMessage(const osc::ReceivedMessage &m,
             app_.stopPatch();
         } else if (addr == "/nui/displayClear") {
             app_.device().displayClear();
-        } else if (addr == "/nui/displayPain") {
+        } else if (addr == "/nui/displayPaint") {
             app_.device().displayPaint();
         } else if (addr == "/nui/gClear") {
             osc::ReceivedMessage::const_iterator arg = m.ArgumentsBegin();

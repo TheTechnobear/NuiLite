@@ -104,7 +104,7 @@ void SKApp::stop() {
     //std::cerr << "SKApp::stop" << std::endl;
     keepRunning_ = false;
     oscListenSocket_->AsynchronousBreak();
-    //std::cerr << "SKApp::run end" << std::endl;
+    
     if (osc_server_.joinable()) {
         osc_server_.join();
     }
@@ -115,6 +115,7 @@ void SKApp::stop() {
     }
     oscWriteSocket_.reset();
     device_.stop();
+    //std::cerr << "SKApp::run end" << std::endl;
 }
 
 
@@ -393,6 +394,7 @@ void SKApp::reloadMenu() {
 void SKApp::loadMenu(const std::string &dir, bool sys) {
     struct dirent **namelist;
     int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
+    if(n<=0) return;
 
     for (int i = 0; i < n; i++) {
         char *fname = namelist[i]->d_name;

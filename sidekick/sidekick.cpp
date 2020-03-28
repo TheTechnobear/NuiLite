@@ -34,6 +34,7 @@ int main(int argc, const char *argv[]) {
 
     std::cout << "starting sidekick" << std::endl;
     signal(SIGINT, intHandler);
+    signal(SIGUSR1, intHandler);
     app_ = std::make_shared<SKApp>();
     app_->init(prefs);
     app_->run();

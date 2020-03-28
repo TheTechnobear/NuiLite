@@ -315,7 +315,9 @@ void NuiDeviceImpl_::start() {
 }
 
 void NuiDeviceImpl_::stop() {
+    if(!keepRunning_) return;
     keepRunning_ = false;
+    usleep(100 * 1000);
 
     deinitDisplay();
     deinitGPIO();
@@ -371,6 +373,7 @@ void NuiDeviceImpl_::displayClear() {
 
 void NuiDeviceImpl_::gClear(unsigned clr) {
     gFillArea(clr, 0, 0, SCREEN_X, SCREEN_Y);
+    dirty_ = true;
 }
 
 void NuiDeviceImpl_::gSetPixel(unsigned clr, unsigned x, unsigned y) {
