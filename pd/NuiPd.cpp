@@ -110,11 +110,27 @@ void NuiPd_setup(void) {
     class_addmethod(NuiPd_class, (t_method) NuiPd_displayPaint, gensym("paint"), A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_info, gensym("info"), A_NULL);
 
-    class_addmethod(NuiPd_class, (t_method) NuiPd_clearRect, gensym("clearRect"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,
-                    A_NULL);
+    // graphics api
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gClear, gensym("gClear"), A_DEFFLOAT, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gSetPixel, gensym("gSetPixel"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gFillArea, gensym("gFillArea"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gCircle, gensym("gCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gFilledCircle, gensym("gFilledCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gLine, gensym("gFilledCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gRectangle, gensym("gRectangle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gInvert, gensym("gInvert"), A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gText, gensym("gText"), A_GIMME, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gWaveform, gensym("gWaveform"), A_GIMME, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gInvertArea, gensym("gInvertArea"), A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gPng, gensym("gPng"), A_DEFFLOAT, A_DEFFLOAT, A_DEFSYMBOL, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_textLine, gensym("textLine"), A_GIMME, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_invertLine, gensym("invertLine"), A_DEFFLOAT, A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_clearLine, gensym("clearLine"), A_DEFFLOAT, A_DEFFLOAT, A_NULL);
+
+    // deprecated api
+    class_addmethod(NuiPd_class, (t_method) NuiPd_clearRect, gensym("clearRect"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_drawText, gensym("drawText"), A_GIMME, A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_drawPNG, gensym("drawPng"), A_DEFFLOAT, A_DEFFLOAT, A_DEFSYMBOL, A_NULL);
-
     class_addmethod(NuiPd_class, (t_method) NuiPd_displayText, gensym("displayText"), A_GIMME, A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_clearText, gensym("clearText"), A_DEFFLOAT, A_DEFFLOAT, A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_invertText, gensym("invertText"), A_DEFFLOAT, A_NULL);
@@ -141,14 +157,47 @@ void NuiPd_info(t_NuiPd *obj) {
     NuiPd_sendMsg("nui_num_buttons", 3);
     NuiPd_sendMsg("nui_num_encoders", (float) obj->device_->numEncoders());
 }
+/////////////////////////////////////
 
-// graphics
-void NuiPd_clearRect(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg w, t_floatarg h) {
+void NuiPd_gClear(t_NuiPd *obj, t_floatarg clr) {
     if (obj == nullptr || obj->device_ == nullptr) return;
-    obj->device_->clearRect((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) w, (unsigned) h);
+    obj->device_->gClear((unsigned) clr);
 }
 
-void NuiPd_drawText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
+void NuiPd_gSetPixel(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gSetPixel((unsigned) clr, (unsigned) x, (unsigned) y);
+}
+
+void NuiPd_gFillArea(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg w, t_floatarg h) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gFillArea((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) w, (unsigned) h);
+}
+
+void NuiPd_gCircle(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg r) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gCircle((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) r);
+}
+
+void NuiPd_gFilledCircle(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg r) {
+    obj->device_->gCircle((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) r);
+}
+
+void NuiPd_gLine(t_NuiPd *obj, t_floatarg clr, t_floatarg x1, t_floatarg y1, t_floatarg x2, t_floatarg y2) {
+    obj->device_->gRectangle((unsigned) clr, (unsigned) x1, (unsigned) y1, (unsigned) x2, (unsigned) y2);
+}
+
+void NuiPd_gRectangle(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg w, t_floatarg h) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gRectangle((unsigned) clr, (unsigned) x, (unsigned) y, (unsigned) w, (unsigned) h);
+}
+
+void NuiPd_gInvert(t_NuiPd *obj) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gInvert();
+}
+
+void NuiPd_gText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     if (argc < 4) {
         post("error: drawText clr x y string");
@@ -184,20 +233,43 @@ void NuiPd_drawText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
 
         if (i != argc - 1) str += " ";
     }
-    obj->device_->drawText(clr, x, y, str);
+    obj->device_->gText(clr, x, y, str);
 }
 
-void NuiPd_drawPNG(t_NuiPd *obj, t_floatarg x, t_floatarg y, t_symbol *s) {
+void NuiPd_gWaveform(t_NuiPd *obj,  t_symbol *s, int argc, t_atom *argv) {
+    unsigned arg = 0;
+    unsigned clr = 0;
+    if (argv[arg].a_type == A_FLOAT) {
+        clr = atom_getfloat(&argv[arg]);
+    }
+
+    arg++;
+    std::vector<unsigned> wave;
+    for (unsigned i = arg; i < argc; i++) {
+        t_atom *targ = argv + i;
+        if (targ->a_type == A_FLOAT) {
+            wave.push_back((unsigned) atom_getfloat(targ));
+        }
+    }
+
+    obj->device_->gWaveform(clr,wave);
+}
+
+void NuiPd_gInvertArea(t_NuiPd *obj, t_floatarg x, t_floatarg y, t_floatarg w, t_floatarg h) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->gInvertArea( (unsigned) x, (unsigned) y, (unsigned) w, (unsigned) h);
+}
+
+void NuiPd_gPng(t_NuiPd *obj, t_floatarg x, t_floatarg y, t_symbol *s) {
     if (obj == nullptr || obj->device_ == nullptr || s == nullptr || s->s_name == nullptr) return;
-    obj->device_->drawPNG((unsigned) x, (unsigned) y, s->s_name);
+    obj->device_->gPng((unsigned) x, (unsigned) y, s->s_name);
 }
 
 
-// text displays
-void NuiPd_displayText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
+void NuiPd_textLine(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
     if (obj == nullptr || obj->device_ == nullptr) return;
     if (argc < 4) {
-        post("error: displayText clr line col string");
+        post("error: NuiPd_textLine clr line col string");
     }
     unsigned arg = 0;
     unsigned line = 0, col = 0, clr = 0;
@@ -230,19 +302,40 @@ void NuiPd_displayText(t_NuiPd *obj, t_symbol *, int argc, t_atom *argv) {
 
         if (i != argc - 1) str += " ";
     }
-    obj->device_->displayText(clr, line, col, str);
+    obj->device_->textLine(clr, line, col, str);
 }
 
+void NuiPd_invertLine(t_NuiPd *obj, t_floatarg line) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->invertLine((unsigned) line);
+}
 
+void NuiPd_clearLine(t_NuiPd *obj, t_floatarg clr, t_floatarg line) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    obj->device_->clearLine((unsigned) clr, (unsigned) line);
+}
+
+// deprecated api
+void NuiPd_clearRect(t_NuiPd *obj, t_floatarg clr, t_floatarg x, t_floatarg y, t_floatarg w, t_floatarg h) {
+    if (obj == nullptr || obj->device_ == nullptr) return;
+    NuiPd_gFillArea(obj, clr, x, y, w, h);
+}
+
+void NuiPd_drawText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
+    NuiPd_gText(obj,s,argc,argv);
+}
+
+void NuiPd_drawPNG(t_NuiPd *obj, t_floatarg x, t_floatarg y, t_symbol *s) {
+    NuiPd_gPng(obj,x,y,s);
+}
+void NuiPd_displayText(t_NuiPd *obj, t_symbol *s, int argc, t_atom *argv) {
+    NuiPd_textLine(obj,s,argc,argv);
+}
 void NuiPd_clearText(t_NuiPd *obj, t_floatarg clr, t_floatarg line) {
-    if (obj == nullptr || obj->device_ == nullptr) return;
-    obj->device_->clearText((unsigned) clr, (unsigned) line);
+    NuiPd_clearLine(obj,clr,line);
 }
-
 void NuiPd_invertText(t_NuiPd *obj, t_floatarg line) {
-    if (obj == nullptr || obj->device_ == nullptr) return;
-    obj->device_->invertText((unsigned) line);
-
+    NuiPd_invertLine(obj,line);
 }
 
 
