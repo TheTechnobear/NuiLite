@@ -8,5 +8,7 @@
   "menuOnStartup": false,
   "stateFile": "./sidekick-state.json",
   "pdOpts" : "-nogui -rt -audiobuf 4 -alsamidi",
+  "listenPort" : 4000,
+  "sendPort" : 4001,
   "_endofconfig_": "that's all folks"
 }

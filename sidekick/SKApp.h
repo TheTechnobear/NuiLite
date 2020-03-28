@@ -4,8 +4,17 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <thread>
+
+
+#include <ip/UdpSocket.h>
+#include <readerwriterqueue.h>
 
 #include "NuiDevice.h"
+
+class SKOscPacketListener;
+
+class SKOscCallback;
 
 class SKPrefs;
 
@@ -20,7 +29,14 @@ public:
     void onButton(unsigned id, unsigned value);
     void onEncoder(unsigned id, int value);
 
+    void processOsc(); // dont call!
+    void processOscWrite(); // dont call!
 private:
+
+    friend class SKOscPacketListener;
+
+    friend class SKOscCallback;
+
     struct MenuItem {
         enum Type {
             ShellPatch,
@@ -38,20 +54,38 @@ private:
     };
 
     static int execShell(const std::string &cmd);
-    static void runScript(const std::string &root,const std::string &name, const std::string &cmd);
+    static void runScript(const std::string &root, const std::string &name, const std::string &cmd);
     void runPd(const std::string &root, const std::string &name);
     void runInstall(const std::string &root, const std::string &name);
     void runRefreshMenu();
     void runRefreshSystem();
     void runPowerOff();
+    void stopPatch();
+
+    NuiLite::NuiDevice &device() { return device_; }
+
 
     static int checkFileExists(const std::string &filename);
     void displayMenu();
     void activateItem();
     void saveState();
     void reloadMenu();
-    void loadMenu(const std::string& dir, bool sys);
-    static std::string  getCmdOptions(const std::string& file);
+    void loadMenu(const std::string &dir, bool sys);
+    static std::string getCmdOptions(const std::string &file);
+
+
+    void startOscServer();
+    void sendOsc(const char *data, unsigned size);
+    void sendOscEvent(const std::string& event);
+
+    struct OscMsg {
+        static const int MAX_N_OSC_MSGS = 64;
+        static const int MAX_OSC_MESSAGE_SIZE = 128;
+        int size_;
+        char buffer_[MAX_OSC_MESSAGE_SIZE];
+        IpEndpointName origin_; // only used when for recv
+    };
+
 
     unsigned POLL_MS_ = 1;
     unsigned ACTIVE_TIME_ = 5000; //5000 mSec
@@ -76,4 +110,21 @@ private:
     bool loadOnStartup_;
     std::string stateFile_;
     std::string pdOpts_;
+
+    // listen for osc
+    unsigned listenPort_ = 4000;
+    std::thread osc_server_;
+    std::unique_ptr<UdpListeningReceiveSocket> oscListenSocket_;
+    std::shared_ptr<SKOscPacketListener> oscListener_;
+    std::shared_ptr<SKOscCallback> oscProcessor_;
+    moodycamel::ReaderWriterQueue<OscMsg> readMessageQueue_;
+
+    // send osc
+    unsigned sendPort_ = 4001;
+    std::thread osc_writer_;
+    std::shared_ptr<UdpTransmitSocket> oscWriteSocket_;
+    moodycamel::BlockingReaderWriterQueue<OscMsg> writeMessageQueue_;
+
+    static constexpr unsigned OSC_OUTPUT_BUFFER_SIZE = 1024;
+    char osc_write_buffer_[OSC_OUTPUT_BUFFER_SIZE];
 };

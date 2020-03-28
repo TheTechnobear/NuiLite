@@ -10,7 +10,7 @@ project(nuilite)
 
 set(PROJECT_NAME nuilite)
 set(SPL_VERSION_MAJOR 0)
-set(SPL_VERSION_MINOR 1)
+set(SPL_VERSION_MINOR 2)
 set(SPL_VERSION_UPDATE 0)
 set(SPL_VERSION "${SPL_VERSION_MAJOR}.${SPL_VERSION_MINOR}.${SPL_VERSION_UPDATE}")
 set(CMAKE_OSX_ARCHITECTURES "x86_64")
@@ -82,6 +82,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release/bin)
 
 ############
+add_subdirectory(external/oscpack oscpack)
 add_subdirectory(external/moodycamel moodycamel)
 add_subdirectory(external/cJSON cjson)
 

@@ -5,9 +5,9 @@
 
 class SKApp;
 
-class SKCallback : public NuiLite::NuiCallback {
+class SKHardwareCallback : public NuiLite::NuiCallback {
 public:
-    explicit SKCallback(SKApp &app);
+    explicit SKHardwareCallback(SKApp &app);
     void init();
     void onButton(unsigned id, unsigned value) override;
     void onEncoder(unsigned id, int value) override;

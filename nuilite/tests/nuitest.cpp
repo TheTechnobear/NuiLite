@@ -29,7 +29,7 @@ void test7();
 void test8();
 void test9();
 
-static constexpr unsigned  NTESTS=10;
+static constexpr unsigned NTESTS = 10;
 
 
 void (*tests[NTESTS])(void) = {
@@ -46,11 +46,11 @@ void (*tests[NTESTS])(void) = {
 };
 
 
-static int testIdx=0;
+static int testIdx = 0;
 
 void nextTest() {
     testIdx++;
-    testIdx = testIdx >= NTESTS ? testIdx = 0 : testIdx; 
+    testIdx = testIdx >= NTESTS ? testIdx = 0 : testIdx;
     fprintf(stderr, "test %d\n", testIdx);
     (*tests[testIdx])();
 }
@@ -58,11 +58,10 @@ void nextTest() {
 void prevTest() {
     device.displayClear();
     testIdx--;
-    testIdx = testIdx < 0 ? NTESTS - 1 : testIdx; 
+    testIdx = testIdx < 0 ? NTESTS - 1 : testIdx;
     fprintf(stderr, "test %d\n", testIdx);
     (*tests[testIdx])();
 }
-
 
 
 class TestCallback : public NuiLite::NuiCallback {
@@ -91,7 +90,7 @@ public:
     void onEncoder(unsigned id, int value) override {
         char buf[100];
         sprintf(buf, "Encoder %d : %d ", id, value);
-        device.clearText(0,0);
+        device.clearText(0, 0);
         device.displayText(15, 0, 1, buf);
         fprintf(stderr, "encoder %d : %d\n", id, value);
     }
@@ -144,15 +143,15 @@ int main(int argc, const char *argv[]) {
 void test0() {
     device.displayClear();
 
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 0");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 0");
     device.gPng(0, 0, "./orac.png");
 
 }
 
 void test1() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 1");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 1");
     device.clearText(1, 0);
     device.displayText(15, 0, 0, "a1 : BasicPoly > main");
 }
@@ -160,63 +159,64 @@ void test1() {
 void test2() {
     device.displayClear();
 
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 2 - text line");
-    device.textLine(15,1,0,"line 1");
-    device.textLine(15,2,0,"line 2");
-    device.textLine(15,3,0,"line 3");
-    device.textLine(15,4,0,"line 4");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 2 - text line");
+    device.textLine(15, 1, 0, "line 1");
+    device.textLine(15, 2, 0, "line 2");
+    device.textLine(15, 3, 0, "line 3");
+    device.textLine(15, 4, 0, "line 4");
 }
 
 void test3() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 3 - inv/clr line");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 3 - inv/clr line");
     device.invertLine(1);
-    device.clearLine(0,2);
+    device.clearLine(0, 2);
 }
 
 void test4() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 4 0 - gTest");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 4 0 - gTest");
 
-    device.gText(15,32, 32, "@ 32 32");
+    device.gText(15, 32, 32, "@ 32 32");
 }
 
 void test5() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 5 - gRectangel");
-    device.gRectangle(15, 5, 5 , 40, 40 );
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 5 - gRectangel");
+    device.gRectangle(15, 5, 5, 40, 40);
 }
 
 void test6() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 6 - gCircle");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 6 - gCircle");
     device.gCircle(15, 64, 32, 10);
 }
 
 void test7() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 7 - gFilledCircle");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 7 - gFilledCircle");
     device.gFilledCircle(15, 64, 32, 10);
 }
 
 void test8() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 8 - gLine");
-    device.gLine(15, 0,0 ,64, 32);
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 8 - gLine");
+    device.gLine(15, 0, 0, 64, 32);
 }
 
 #include <math.h>
 #include <vector>
+
 void test9() {
-    device.clearLine(0,0);
-    device.textLine(15,0,0,"test 9");
+    device.clearLine(0, 0);
+    device.textLine(15, 0, 0, "test 9");
     std::vector<unsigned> wave;
-    for(int x=0;x<127;x++) {
-	    double i = float(x) *  ( (2.0 * M_PI) / 127.0);
-	    unsigned y = unsigned ((sin(i) * 15.0) + 25.0);
-	    wave.push_back(y);
+    for (int x = 0; x < 127; x++) {
+        double i = float(x) * ((2.0 * M_PI) / 127.0);
+        unsigned y = unsigned((sin(i) * 15.0) + 25.0);
+        wave.push_back(y);
     }
-    device.gWaveform(15,wave);
+    device.gWaveform(15, wave);
     device.gInvert();
 }

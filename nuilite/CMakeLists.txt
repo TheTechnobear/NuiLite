@@ -12,13 +12,13 @@ include_directories(
    "${PROJECT_SOURCE_DIR}/../external/moodycamel"
 )
 
-set(FL_H
-	NuiDevice.h
-        )
+set(FL_H NuiDevice.h )
 
-set(FL_SRC
-	NuiDevice.cpp
-        )
+if (UNIX AND NOT APPLE)
+    set(FL_SRC  NuiDevice.cpp )
+else ()
+    set(FL_SRC NuiDeviceNop.cpp )
+endif()
 
 
 

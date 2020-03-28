@@ -1,5 +1,6 @@
 #include "SKApp.h"
-#include "SKCallback.h"
+#include "SKHardwareCallback.h"
+#include "SKOscCallback.h"
 #include "SKPrefs.h"
 
 #include "NuiDevice.h"
@@ -12,6 +13,13 @@
 #include <iomanip>
 #include <clocale>
 
+// osc
+#include <osc/OscOutboundPacketStream.h>
+#include <osc/OscReceivedElements.h>
+#include <osc/OscPacketListener.h>
+#include <ip/UdpSocket.h>
+
+
 // for saving state
 #include <fstream>
 #include <cJSON.h>
@@ -20,13 +28,15 @@ SKApp::SKApp() :
     sidekickActive_(false),
     selIdx_(0),
     loadOnStartup_(false),
-    keepRunning_(true) {
+    keepRunning_(true),
+    writeMessageQueue_(OscMsg::MAX_N_OSC_MSGS),
+    readMessageQueue_(OscMsg::MAX_N_OSC_MSGS) {
 
 }
 
 
 void SKApp::init(SKPrefs &prefs) {
-    auto cb = std::make_shared<SKCallback>(*this);
+    auto cb = std::make_shared<SKHardwareCallback>(*this);
     selIdx_ = 0;
     menuOffset_ = 0;
     sidekickActive_ = false;
@@ -41,6 +51,9 @@ void SKApp::init(SKPrefs &prefs) {
     loadOnStartup_ = prefs.getBool("loadOnStartup", true);
     stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
     pdOpts_ = prefs.getString("pdOpts", "-nogui -rt -audiobuf 4 -alsamidi");
+
+    listenPort_ = (unsigned) prefs.getInt("listenPort", 4000);
+    sendPort_ = (unsigned) prefs.getInt("sendPort", 4001);
 
     bool menuOnStartup = prefs.getBool("menuOnStartup", false);
     std::setlocale(LC_ALL, "en_US.UTF-8");
@@ -83,17 +96,38 @@ void SKApp::init(SKPrefs &prefs) {
             }
         }
     }
+    startOscServer();
 }
 
 void SKApp::stop() {
+    sendOscEvent("sidekickStop");
     //std::cerr << "SKApp::stop" << std::endl;
     keepRunning_ = false;
+    oscListenSocket_->AsynchronousBreak();
+    //std::cerr << "SKApp::run end" << std::endl;
+    if (osc_server_.joinable()) {
+        osc_server_.join();
+    }
+    oscListenSocket_.reset();
+
+    if (osc_writer_.joinable()) {
+        osc_writer_.join();
+    }
+    oscWriteSocket_.reset();
+    device_.stop();
 }
 
 
 void SKApp::run() {
     while (keepRunning_) {
         device_.process(sidekickActive_);
+        OscMsg msg;
+        bool paint = false;
+        while (readMessageQueue_.try_dequeue(msg)) {
+            oscProcessor_->ProcessPacket(msg.buffer_, msg.size_, msg.origin_);
+            paint = true;
+        }
+        if (paint) device_.displayPaint();
         if (activeCount_ > 0) {
             activeCount_--;
             if (activeCount_ <= 0) {
@@ -101,32 +135,36 @@ void SKApp::run() {
                 sidekickActive_ = true;
                 if (sidekickActive_) {
                     std::cerr << "Sidekick activated,stop processes" << std::endl;
-                    for (const auto &mi:mainMenu_) {
-                        std::string root;
-                        if (mi->type_ == MenuItem::System) {
-                            root = systemDir_;
-                        } else {
-                            root = patchDir_;
-                        }
-                        std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
-                        if (checkFileExists(stopfile)) {
-                            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./stop.sh";
-                            execShell(shcmd);
-                        } else if (mi->type_ == MenuItem::PdPatch) {
-                            execShell("killall pd &");
-                        }
-                    }
-                    displayMenu();
-                    device_.displayPaint();
+                    stopPatch();
                 }
             }
         }
         usleep(POLL_MS_ * 1000);
     }
-    //std::cerr << "SKApp::run end" << std::endl;
-    device_.stop();
+    stop();
 }
 
+void SKApp::stopPatch() {
+    sendOscEvent("sidekickStopPatch");
+    for (const auto &mi:mainMenu_) {
+        std::string root;
+        if (mi->type_ == MenuItem::System) {
+            root = systemDir_;
+        } else {
+            root = patchDir_;
+        }
+        std::string stopfile = root + "/" + mi->name_ + "/stop.sh";
+        if (checkFileExists(stopfile)) {
+            std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./stop.sh";
+            execShell(shcmd);
+        } else if (mi->type_ == MenuItem::PdPatch) {
+            execShell("killall pd &");
+        }
+    }
+    displayMenu();
+    device_.displayPaint();
+    sidekickActive_ = true;
+}
 
 int SKApp::execShell(const std::string &cmd) {
     std::cout << "exec : " << cmd << std::endl;
@@ -187,8 +225,8 @@ void SKApp::runRefreshSystem() {
     reloadMenu();
 
     device_.displayClear();
-    device_.displayText(15,0,0, "Checking for updates ...");
-    device_.displayText(15,2,0, "Updating repo...");
+    device_.displayText(15, 0, 0, "Checking for updates ...");
+    device_.displayText(15, 2, 0, "Updating repo...");
     device_.displayPaint();
 
     execShell("sudo apt update");
@@ -204,8 +242,8 @@ void SKApp::runRefreshSystem() {
         std::string updatefile = root + "/" + mi->name_ + "/update.sh";
         if (checkFileExists(updatefile)) {
             std::string txt = "Checking " + mi->name_ + " ...";
-            device_.clearText(0,2);
-            device_.displayText(15,2,0, txt);
+            device_.clearText(0, 2);
+            device_.displayText(15, 2, 0, txt);
             device_.displayPaint();
             std::string shcmd = "cd \"" + root + "/" + mi->name_ + "\"; ./update.sh";
             std::cout << "update running : " << shcmd << std::endl;
@@ -214,12 +252,12 @@ void SKApp::runRefreshSystem() {
     }
 
     // update sidekick afterwards, since it may restart sidekick
-    device_.clearText(0,2);
-    device_.displayText(15,2,0, "Checking sidekick...");
+    device_.clearText(0, 2);
+    device_.displayText(15, 2, 0, "Checking sidekick...");
     device_.displayPaint();
     execShell("sudo apt install -y sidekick");
-    device_.clearText(0,2);
-    device_.displayText(15,2,0, "Completed");
+    device_.clearText(0, 2);
+    device_.displayText(15, 2, 0, "Completed");
     device_.displayPaint();
     sleep(1);
 
@@ -228,10 +266,9 @@ void SKApp::runRefreshSystem() {
 
 void SKApp::runPowerOff() {
     device_.displayClear();
-    device_.displayText(15,0,0, "Powering Down...");
+    device_.displayText(15, 0, 0, "Powering Down...");
     device_.displayPaint();
     execShell("sudo poweroff");
-
 }
 
 
@@ -268,6 +305,7 @@ void SKApp::activateItem() {
         device_.displayText(15, 0, 0, "Launch...");
         device_.displayText(15, 1, 0, item->name_);
         std::cerr << "launch : " << item->name_ << std::endl;
+        sendOscEvent("sidekickLaunchItem");
         device_.displayPaint();
         sidekickActive_ = false;
         switch (item->type_) {
@@ -420,6 +458,15 @@ void SKApp::onButton(unsigned id, unsigned value) {
         std::cerr << "Sidekick launch " << std::endl;
         activateItem();
     }
+
+    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+    ops << osc::BeginBundleImmediate
+        << osc::BeginMessage("/nui/button")
+        << (int32_t) id
+        << (int32_t) value
+        << osc::EndMessage
+        << osc::EndBundle;
+    sendOsc(ops.Data(), ops.Size());
 }
 
 void SKApp::onEncoder(unsigned id, int value) {
@@ -435,6 +482,15 @@ void SKApp::onEncoder(unsigned id, int value) {
 
         displayMenu();
     }
+
+    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+    ops << osc::BeginBundleImmediate
+        << osc::BeginMessage("/nui/encoder")
+        << (int32_t) id
+        << (int32_t) value
+        << osc::EndMessage
+        << osc::EndBundle;
+    sendOsc(ops.Data(), ops.Size());
 }
 
 std::string SKApp::getCmdOptions(const std::string &file) {
@@ -448,3 +504,64 @@ std::string SKApp::getCmdOptions(const std::string &file) {
     }
     return opts;
 }
+
+
+void *osc_proc(void *aThis) {
+    SKApp *pThis = static_cast<SKApp *>(aThis);
+    pThis->processOsc();
+    return 0;
+}
+
+void SKApp::processOsc() {
+    oscListenSocket_.reset(
+        new UdpListeningReceiveSocket(
+            IpEndpointName(IpEndpointName::ANY_ADDRESS, listenPort_),
+            oscListener_.get())
+    );
+    oscListenSocket_->Run();
+}
+
+void *osc_write_proc(void *aThis) {
+    SKApp *pThis = static_cast<SKApp *>(aThis);
+    pThis->processOscWrite();
+    return 0;
+}
+
+
+static constexpr unsigned OSC_WRITE_POLL_WAIT_TIMEOUT = 1000;
+
+void SKApp::processOscWrite() {
+    oscWriteSocket_ = std::shared_ptr<UdpTransmitSocket>(new UdpTransmitSocket(IpEndpointName("127.0.0.1", sendPort_)));
+    while (keepRunning_) {
+        OscMsg msg;
+        if (writeMessageQueue_.wait_dequeue_timed(msg, std::chrono::milliseconds(OSC_WRITE_POLL_WAIT_TIMEOUT))) {
+            oscWriteSocket_->Send(msg.buffer_, (size_t) msg.size_);
+        }
+    }
+}
+
+
+void SKApp::startOscServer() {
+    oscListener_ = std::make_shared<SKOscPacketListener>(readMessageQueue_);
+    oscProcessor_ = std::make_shared<SKOscCallback>(*this);
+    osc_server_ = std::thread(osc_proc, this);
+    osc_writer_ = std::thread(osc_write_proc, this);
+}
+
+void SKApp::sendOscEvent(const std::string &event) {
+    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+    std::string addr = std::string("/nui/") + event;
+    ops << osc::BeginBundleImmediate
+        << osc::BeginMessage(addr.c_str())
+        << osc::EndMessage
+        << osc::EndBundle;
+
+}
+
+void SKApp::sendOsc(const char *data, unsigned size) {
+    OscMsg msg;
+    msg.size_ = (size > OscMsg::MAX_OSC_MESSAGE_SIZE ? OscMsg::MAX_OSC_MESSAGE_SIZE : size);
+    memcpy(msg.buffer_, data, (size_t) msg.size_);
+    writeMessageQueue_.enqueue(msg);
+}
+

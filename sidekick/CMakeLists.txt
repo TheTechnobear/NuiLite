@@ -10,7 +10,13 @@ include_directories(
 )
 
 
-set(SK_SRC "sidekick.cpp" SKApp.cpp SKApp.h SKCallback.cpp SKCallback.h SKPrefs.cpp SKPrefs.h)
+set(SK_SRC 
+    sidekick.cpp 
+    SKApp.cpp SKApp.h 
+    SKPrefs.cpp SKPrefs.h
+    SKHardwareCallback.cpp SKHardwareCallback.h 
+    SKOscCallback.cpp SKOscCallback.h
+    )
 add_executable(sidekick ${SK_SRC})
-target_link_libraries(sidekick nuilite ${LIBCAIRO} cjson pthread)
+target_link_libraries(sidekick nuilite ${LIBCAIRO} cjson pthread oscpack moodycamel)
 
