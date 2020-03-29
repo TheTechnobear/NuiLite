@@ -84,6 +84,7 @@ private:
     void startOscServer();
     void sendOsc(const char *data, unsigned size);
     void sendSKOscEvent(const std::string &event, const std::string data = "");
+    void sendDeviceInfo();
 
     struct OscMsg {
         static const int MAX_N_OSC_MSGS = 64;

@@ -543,8 +543,10 @@ void SKApp::reloadMenu() {
     mainMenu_.clear();
     loadMenu(patchDir_, false);
     loadMenu(systemDir_, true);
-    mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem, true));
-    mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu, true));
+    if(patchDir_==topPatchDir_) {
+        mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem, true));
+        mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu, true));
+    }
     mainMenu_.push_back(std::make_shared<MenuItem>("Power OFF ", MenuItem::PowerOff, true));
 }
 
@@ -741,7 +743,23 @@ void SKApp::sendSKOscEvent(const std::string &event, const std::string data) {
 
     ops << osc::EndMessage
         << osc::EndBundle;
+    sendOsc(ops.Data(), ops.Size());
+}
 
+void SKApp::sendDeviceInfo() {
+    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+    ops << osc::BeginBundleImmediate;
+    
+    ops << osc::BeginMessage("/nui/numbuttons")
+        << 3
+        << osc::EndMessage;
+
+    ops << osc::BeginMessage("/nui/numencoders")
+        << (int) device_.numEncoders()
+        << osc::EndMessage;
+
+    ops << osc::EndBundle;
+    sendOsc(ops.Data(), ops.Size());
 }
 
 void SKApp::sendOsc(const char *data, unsigned size) {

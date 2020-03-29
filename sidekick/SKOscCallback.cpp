@@ -23,8 +23,10 @@ void SKOscCallback::ProcessMessage(const osc::ReceivedMessage &m,
     try {
         osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
         std::string addr = m.AddressPattern();
-        if (addr == "/nui/stopSidekick") {
+        if (addr == "/sk/activate") {
             app_.stopPatch();
+        } else if (addr == "/sk/deviceInfo") {
+            app_.sendDeviceInfo();
         } else if (addr == "/nui/displayClear") {
             app_.device().displayClear();
         } else if (addr == "/nui/displayPaint") {
