@@ -541,9 +541,16 @@ void SKApp::reloadMenu() {
     menuOffset_ = 0;
     selIdx_ = 0;
     mainMenu_.clear();
-    loadMenu(patchDir_, false);
-    loadMenu(systemDir_, true);
+
+    if(systemDir_==topSystemDir_) {
+        loadMenu(patchDir_, false);
+    }
+
     if(patchDir_==topPatchDir_) {
+        loadMenu(systemDir_, true);
+    }
+
+    if(patchDir_==topPatchDir_ && systemDir_ == topSystemDir_) {
         mainMenu_.push_back(std::make_shared<MenuItem>("Check for Updates", MenuItem::RefreshSystem, true));
         mainMenu_.push_back(std::make_shared<MenuItem>("Refresh Menu", MenuItem::RefreshMenu, true));
     }
