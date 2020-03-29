@@ -3,7 +3,7 @@
   "systemDir": "./system",
   "patchDir": "./patches",
   "pollTime": 1,
-  "activeTime": 5000,
+  "activeTime": 4000,
   "loadOnStartup": true,
   "menuOnStartup": false,
   "stateFile": "./sidekick-state.json",
