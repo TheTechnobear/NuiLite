@@ -49,6 +49,7 @@ void SKApp::init(SKPrefs &prefs) {
     stateFile_ = prefs.getString("stateFile", "./sidekick-state.json");
     pdOpts_ = prefs.getString("pdOpts", "-nogui -rt -audiobuf 4 -alsamidi");
     scOpts_ = prefs.getString("scOpts", "");
+    scHome_ = prefs.getString("scHome", ".");
 
     listenPort_ = (unsigned) prefs.getInt("listenPort", 3001);
     sendPort_ = (unsigned) prefs.getInt("sendPort", 3000);
@@ -116,6 +117,7 @@ void SKApp::init(SKPrefs &prefs) {
 }
 
 void SKApp::stop() {
+    stopPatch();
     sendSKOscEvent("stop");
     //std::cerr << "SKApp::stop" << std::endl;
     keepRunning_ = false;
@@ -279,7 +281,6 @@ void SKApp::runPd(const std::string &, const std::shared_ptr<MenuItem> &item) {
 }
 
 
-
 void SKApp::runSc(const std::string &, const std::shared_ptr<MenuItem> &item) {
     const std::string &name = item->name_;
     std::string scOpts = scOpts_;
@@ -303,7 +304,7 @@ void SKApp::runSc(const std::string &, const std::shared_ptr<MenuItem> &item) {
         std::cout << "using start file : "<< startFile << std::endl;
         execShell("\"" + startFile + "\"");
     }
-    std::string shcmd = "cd \"" + dir + "/" + name + "\"; sclang " + scOpts + " main.scd &";
+    std::string shcmd = "cd \"" + dir + "/" + name + "\"; HOME=" + scHome_ + " sclang " + scOpts + " main.scd &  ";
     std::cout << "sc running : " << shcmd << std::endl;
     execShell(shcmd);
 }
@@ -660,7 +661,17 @@ void SKApp::onButton(unsigned id, unsigned value) {
 }
 
 void SKApp::onEncoder(unsigned id, int value) {
+    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+    ops << osc::BeginBundleImmediate
+        << osc::BeginMessage("/nui/encoder")
+        << (int32_t) id
+        << (int32_t) value
+        << osc::EndMessage
+        << osc::EndBundle;
+    sendOsc(ops.Data(), ops.Size());
+
     if (!sidekickActive_) return;
+
     if (id == 0) {
         if (value > 0) {
             if (selIdx_ < (mainMenu_.size() - 1)) selIdx_++;
@@ -672,16 +683,8 @@ void SKApp::onEncoder(unsigned id, int value) {
 
         displayMenu();
     }
-
-    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
-    ops << osc::BeginBundleImmediate
-        << osc::BeginMessage("/nui/encoder")
-        << (int32_t) id
-        << (int32_t) value
-        << osc::EndMessage
-        << osc::EndBundle;
-    sendOsc(ops.Data(), ops.Size());
 }
+
 
 std::string SKApp::getCmdOptions(const std::string &file) {
     std::string opts;

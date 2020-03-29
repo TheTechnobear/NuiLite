@@ -4,6 +4,7 @@ s.waitForBoot{
 
 ~pitch = 440;
 
+
 SynthDef(\testSynth, {
         arg freq =440;
         var sig;
@@ -11,18 +12,22 @@ SynthDef(\testSynth, {
         Out.ar(0,sig!2);
 }).add;
 
+s.sync;
+
+~synth=Synth.new(\testSynth);
+
+};
+
+(
 OSCdef( \oscencoder, {
     arg msg, time, addr, recvPort;
-    ~pitch = ~pitch + msg[1] * 10;
+    ~pitch = ~pitch + (msg[2] * 100);
     ~synth.set(\freq, ~pitch);
 },
 "/nui/encoder",
 recvPort:3000
 );
 
-s.sync;
 
-~synth=Synth.new(\testSynth);
-
-};
+)
 

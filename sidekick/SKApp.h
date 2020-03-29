@@ -123,6 +123,7 @@ private:
     std::string stateFile_;
     std::string pdOpts_;
     std::string scOpts_;
+    std::string scHome_;
 
     // listen for osc
     unsigned listenPort_ = 3001;
