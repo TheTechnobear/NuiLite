@@ -179,19 +179,21 @@ void SKApp::stopPatch() {
             if (checkFileExists("./stop_pd.sh")) {
                 execShell("./stop_pd.sh");
             }
+	    break;
         }
         case MenuItem::ScPatch : {
             execShell("killall sclang scsynth &");
             if (checkFileExists("./stop_sc.sh")) {
                 execShell("./stop_sc.sh");
             }
+	    break;
         }
         default: {
             break;
         }
     }
 
-    if (checkFileExists("./stop_sc.sh")) {
+    if (checkFileExists("./stop_all.sh")) {
         execShell("./stop_all.sh");
     }
 
@@ -214,7 +216,7 @@ void SKApp::runScript(const std::string &root, const std::shared_ptr<MenuItem> &
 
 void SKApp::runDir(const std::string &, const std::shared_ptr<MenuItem> &item) {
     const std::string &name = item->name_;
-    std::string &dir = patchDir_;
+    std::string dir = patchDir_;
     if (item->system_) {
         dir = systemDir_;
     }
@@ -222,10 +224,16 @@ void SKApp::runDir(const std::string &, const std::shared_ptr<MenuItem> &item) {
     if (name == std::string("..")) {
         int idx = dir.find_last_of('/');
         if (idx != std::string::npos) {
-            dir = dir.substr(0, idx - 1);
+            dir = dir.substr(0, idx);
         }
     } else {
         dir = dir + "/" + name;
+    }
+
+    if(item->system_) {
+	    systemDir_=dir;
+    } else {
+	    patchDir_=dir;
     }
     runRefreshMenu();
 }
@@ -247,19 +255,19 @@ void SKApp::runPd(const std::string &, const std::shared_ptr<MenuItem> &item) {
         pdOpts = pdOpts + " -gui -audiobuf 10";
     }
 
-    std::string &dir = patchDir_;
-    std::string &topDir = topPatchDir_;
+    std::string dir = patchDir_;
+    std::string topDir = topPatchDir_;
     if (item->system_) {
         dir = systemDir_;
         topDir = topSystemDir_;
     }
 
-    std::string optsFile= getFile(topDir,dir+"/"+name, "pd-opts.txt");
+    std::string optsFile= getFile(dir,dir+"/"+name, "pd-opts.txt");
     if (optsFile.length() > 0) {
         pdOpts = pdOpts + " " + getCmdOptions(optsFile);
         std::cout << "using cmd options file : " << optsFile << " options : " << pdOpts << std::endl;
     }
-    std::string startFile= getFile(topDir,dir+"/"+name, "start_pd.sh");
+    std::string startFile= getFile(dir,dir+"/"+name, "start_pd.sh");
     if (startFile.length() > 0) {
         std::cout << "using start file : "<< startFile << std::endl;
         execShell("\"" + startFile + "\"");
@@ -277,20 +285,20 @@ void SKApp::runSc(const std::string &, const std::shared_ptr<MenuItem> &item) {
     std::string scOpts = scOpts_;
 //    int nogui = execShell("xprop -root > /dev/null");
 
-    std::string &dir = patchDir_;
-    std::string &topDir = topPatchDir_;
+    std::string dir = patchDir_;
+    std::string topDir = topPatchDir_;
     if (item->system_) {
         dir = systemDir_;
         topDir = topSystemDir_;
     }
 
-    std::string optsFile= getFile(topDir,dir+"/"+name, "sc-opts.txt");
+    std::string optsFile= getFile(dir,dir+"/"+name, "sc-opts.txt");
     if (optsFile.length() > 0) {
         scOpts = scOpts + " " + getCmdOptions(optsFile);
         std::cout << "using cmd options file : " << optsFile << " options : " << scOpts << std::endl;
     }
 
-    std::string startFile= getFile(topDir,dir+"/"+name, "start_sc.sh");
+    std::string startFile= getFile(dir,dir+"/"+name, "start_sc.sh");
     if (startFile.length() > 0) {
         std::cout << "using start file : "<< startFile << std::endl;
         execShell("\"" + startFile + "\"");
@@ -397,6 +405,7 @@ void SKApp::runPowerOff() {
 
 
 int SKApp::checkFileExists(const std::string &filename) {
+    //std::cerr << "checkFileExists : [" << filename << "]" << std::endl;
     struct stat st{};
     int result = stat(filename.c_str(), &st);
     return result == 0;
@@ -433,8 +442,8 @@ void SKApp::activateItem() {
 
         device_.displayPaint();
         sidekickActive_ = false;
-        std::string &dir = patchDir_;
-        std::string &topDir = topPatchDir_;
+        std::string dir = patchDir_;
+        std::string topDir = topPatchDir_;
         if (item->system_) {
             dir = systemDir_;
             topDir = topSystemDir_;
@@ -458,7 +467,7 @@ void SKApp::activateItem() {
                     saveState(item);
                 }
 
-                std::string prePatch= getFile(topDir,dir+"/"+item->name_, "pre-patch.sh");
+                std::string prePatch= getFile(dir,dir+"/"+item->name_, "pre-patch.sh");
                 if (prePatch.length() > 0) execShell("\"" + prePatch + "\"");
 
                 if (item->type_ == MenuItem::PdPatch) {
@@ -469,7 +478,7 @@ void SKApp::activateItem() {
                     runScript(dir, item, "run.sh");
                 }
 
-                std::string postPatch= getFile(topDir,dir+"/"+item->name_, "post-patch.sh");
+                std::string postPatch= getFile(dir,dir+"/"+item->name_, "post-patch.sh");
                 if (postPatch.length() > 0) execShell("\"" + postPatch + "\"");
 
                 break;
@@ -541,6 +550,16 @@ void SKApp::reloadMenu() {
 
 
 void SKApp::loadMenu(const std::string &dir, bool sys) {
+    std::string topDir = topPatchDir_;
+    if (sys) {
+        topDir = topSystemDir_;
+    }
+
+    if(topDir!=dir) {
+	auto menuItem = std::make_shared<MenuItem>("..", MenuItem::Dir, sys);
+	mainMenu_.push_back(menuItem);
+    }
+
     struct dirent **namelist;
     int n = scandir(dir.c_str(), &namelist, nullptr, alphasort);
     if (n <= 0) return;
