@@ -50,8 +50,8 @@ void SKApp::init(SKPrefs &prefs) {
     pdOpts_ = prefs.getString("pdOpts", "-nogui -rt -audiobuf 4 -alsamidi");
     scOpts_ = prefs.getString("scOpts", "");
 
-    listenPort_ = (unsigned) prefs.getInt("listenPort", 4000);
-    sendPort_ = (unsigned) prefs.getInt("sendPort", 4001);
+    listenPort_ = (unsigned) prefs.getInt("listenPort", 3001);
+    sendPort_ = (unsigned) prefs.getInt("sendPort", 3000);
     sendAddr_ = prefs.getString("sendAddr", "127.0.0.1");
 
     topPatchDir_ = patchDir_;
@@ -472,7 +472,7 @@ void SKApp::activateItem() {
 
                 if (item->type_ == MenuItem::PdPatch) {
                     runPd(dir, item);
-                } else if (item->type_ == MenuItem::PdPatch) {
+                } else if (item->type_ == MenuItem::ScPatch) {
                     runSc(dir, item);
                 } else {
                     runScript(dir, item, "run.sh");

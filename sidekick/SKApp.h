@@ -125,7 +125,7 @@ private:
     std::string scOpts_;
 
     // listen for osc
-    unsigned listenPort_ = 4000;
+    unsigned listenPort_ = 3001;
     std::thread osc_server_;
     std::unique_ptr<UdpListeningReceiveSocket> oscListenSocket_;
     std::shared_ptr<SKOscPacketListener> oscListener_;
@@ -133,7 +133,7 @@ private:
     moodycamel::ReaderWriterQueue<OscMsg> readMessageQueue_;
 
     // send osc
-    unsigned sendPort_ = 4001;
+    unsigned sendPort_ = 3000;
     std::string sendAddr_= "127.0.0.1";
     std::thread osc_writer_;
     std::shared_ptr<UdpTransmitSocket> oscWriteSocket_;
