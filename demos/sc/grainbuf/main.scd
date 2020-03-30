@@ -5,6 +5,7 @@
 ~dict = Dictionary.new;
 
 ~density=10;
+~gain=0.5;
 ~amp=0.5;
 ~rate=1.0;
 ~pos=0;
@@ -26,6 +27,7 @@ s.waitForBoot{
 		dur=0.1, rate=1.0,
 		pos=0, interp=2,
 		pan=0, envbufnum = -1,
+        gain=0.5,
 		maxgrains=512;
 
 		var sig,env, gen;
@@ -49,6 +51,7 @@ s.waitForBoot{
 			envbufnum,
 			maxgrains,
 		);
+        sig = sig * gain;
 		Out.ar(0,sig);
 	}
 	).add;
@@ -57,7 +60,7 @@ s.waitForBoot{
 	2.wait;
 
     ~dict.add(\density -> ~density);
-    ~dict.add(\amp -> ~amp);
+    ~dict.add(\gain -> ~gain);
     ~dict.add(\pos -> ~pos);
     ~dict.add(\rate -> ~rate);
     ~dict.add(\nbuf -> 0);
@@ -79,10 +82,10 @@ OSCdef( \osc_encoder, {
 			~sidekick.sendMsg("/nui/displayPaint");
 		},
 		1,{
-			~amp = ~amp + (msg[2] * 0.1);
-			~synth.set(\amp, ~amp);
+			~gain = ~gain + (msg[2] * 0.1);
+			~synth.set(\gain, ~gain);
 			~sidekick.sendMsg("/nui/clearLine",0,2);
-			~sidekick.sendMsg("/nui/textLine",15,2,0,"Amp " ++ ~amp.asString);
+			~sidekick.sendMsg("/nui/textLine",15,2,0,"Gain " ++ ~gain.asString);
 			~sidekick.sendMsg("/nui/displayPaint");
 		},
 		2,{

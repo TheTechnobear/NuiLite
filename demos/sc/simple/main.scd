@@ -1,7 +1,7 @@
 ~sidekick = NetAddr("127.0.0.1", 3001); // sidekick
 
 ~pitch = 440;
-~amp = 0.5
+~amp = 0.5;
 
 ~dict = Dictionary.new;
 ~dict.add(\pitch -> ~pitch);
