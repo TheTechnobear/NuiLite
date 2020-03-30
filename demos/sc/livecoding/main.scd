@@ -31,12 +31,16 @@ send : /live/connect(host,port) - connect to Norns, and proxy Norns messages to 
 
 */
 
+~skDisplay = NetAddr(~nornsip.asString, 3001); // sidekick
+
+
 s.waitForBoot{
-"Server Booted".postln;
-"Live Coding patch".postln;
-
-
-s.sync;
+	"Server Booted".postln;
+	"Live Coding patch".postln;
+	s.sync;
+	~skDisplay.sendMsg("/nui/displayClear");
+	~skDisplay.sendMsg("/nui/textLine",15,0,0,"Live coding enabled");
+	~skDisplay.sendMsg("/nui/displayPaint");
 };
 
 
@@ -50,12 +54,23 @@ OSCdef( \liveConnect, {
 	arg msg, time, addr, recvPort;
 	'connect->'.post;msg[1].post; ' '.post;msg[2].postln;
 	~remote = NetAddr(msg[1].asString, msg[2]); // remote server
-	SoundFile.collect("/home/we/audio/*").do { |f| ~remote.sendMsg("/live/audiofile",f.path); };
 }
 ,
 '/live/connect',
 recvPort:~rPort
 );
+
+OSCdef( \liveFiles, {
+	arg msg, time, addr, recvPort;
+	'files->'.post;msg[1].post; ' '.post;msg[2].postln;
+	SoundFile.collect(msg[2]).do { |f| ~remote.sendMsg(msg[1],f.path); };
+}
+,
+'/live/files',
+recvPort:~rPort
+);
+
+
 
 
 //neb messages to forward to remote client
@@ -73,25 +88,26 @@ OSCdef( \osc_size, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sen
 
 
 
-
 /*
-// EXAMPLE PATCH USED ON REMOTE CLIENT \
-you'll need/want something like this live-coding is running on Norns
+// EXAMPLE PATCH USED ON REMOTE CLIENT
+// you'll need/want something like this live-coding is running on Norns
 
 // connect to Norns
-~nornsip= '192.168.1.65';
+~nornsip= 'norns.local';
 s.options.maxLogins = 4;
-Server.default = s = Server.remote("Norns", NetAddr(~Nornsip.asString,57110),s.options,1);
+Server.default = s = Server.remote("Norns", NetAddr(~nornsip.asString,57110),s.options,1);
 s.initTree;
 s.startAliveThread;
 
 ~localip = '192.168.1.18';
 ~rPort=3000;
 
+~skDisplay = NetAddr(~nornsip.asString, 3001); // sidekick
+
 
 // on connection we will get a list of audio files on the Norns
 ~audio_files = List.new;
-OSCdef(\liveaudiofile,
+OSCdef(\live\audiofile,
 	{
 		arg msg, time, addr, recvPort;
 		msg[1].postln;
@@ -104,6 +120,7 @@ OSCdef(\liveaudiofile,
 //connect to live patch, and ask for redirection
 m = NetAddr(~nornsip.asString, ~rPort);
 m.sendMsg("/live/connect",~localip,~rPort);
+m.sendMsg("/live/files","\live\audiofile", "/home/we/dust/audio/common/waves/");
 
 
 // note from here on, the patch would be the same as run on the Norns
@@ -113,13 +130,19 @@ m.sendMsg("/live/connect",~localip,~rPort);
 
 OSCdef( \osc_encoder, {
 	arg msg, time, addr, recvPort;
-    'remote->'.postln;msg[0].post;msg[1].postln;
+    'remote->'.post;msg[0].post;msg[1].postln;
+	~skDisplay.sendMsg("/nui/textLine",15,2,0,"test");
+	~skDisplay.sendMsg("/nui/displayPaint");
 },
 '/nui/encoder',recvPort:~rPort);
 
 OSCdef( \osc_button, {
 	arg msg, time, addr, recvPort;
-    'remote->'.postln;msg[0].post;msg[1].postln;
+    'remote->'.post;msg[0].post;msg[1].postln;
+	if(msg[1]==0 && msg[2]==1) {
+		~skDisplay.sendMsg("/nui/displayClear");
+		~skDisplay.sendMsg("/nui/displayPaint");
+	}
 },
 '/nui/button',recvPort:~rPort);
 
