@@ -116,7 +116,7 @@ void NuiPd_setup(void) {
     class_addmethod(NuiPd_class, (t_method) NuiPd_gFillArea, gensym("gFillArea"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_gCircle, gensym("gCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_gFilledCircle, gensym("gFilledCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_NULL);
-    class_addmethod(NuiPd_class, (t_method) NuiPd_gLine, gensym("gFilledCircle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
+    class_addmethod(NuiPd_class, (t_method) NuiPd_gLine, gensym("gLine"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_gRectangle, gensym("gRectangle"), A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT,A_DEFFLOAT,A_DEFFLOAT,A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_gInvert, gensym("gInvert"), A_NULL);
     class_addmethod(NuiPd_class, (t_method) NuiPd_gText, gensym("gText"), A_GIMME, A_NULL);
