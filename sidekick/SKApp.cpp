@@ -139,14 +139,13 @@ void SKApp::stop() {
 
 void SKApp::run() {
     while (keepRunning_) {
-        device_.process(sidekickActive_);
+        device_.process(false);
         OscMsg msg;
-        bool paint = false;
-        while (readMessageQueue_.try_dequeue(msg)) {
+
+        while (listenPort_>0 && readMessageQueue_.try_dequeue(msg)) {
             oscProcessor_->ProcessPacket(msg.buffer_, msg.size_, msg.origin_);
-            paint = true;
         }
-        if (paint) device_.displayPaint();
+
         if (activeCount_ > 0) {
             activeCount_--;
             if (activeCount_ <= 0) {
@@ -159,7 +158,8 @@ void SKApp::run() {
             }
         }
         usleep(POLL_MS_ * 1000);
-    }
+        if(sidekickActive_) device_.displayPaint();
+    } // while
     stop();
 }
 
@@ -650,25 +650,29 @@ void SKApp::onButton(unsigned id, unsigned value) {
         activateItem();
     }
 
-    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
-    ops << osc::BeginBundleImmediate
-        << osc::BeginMessage("/nui/button")
-        << (int32_t) id
-        << (int32_t) value
-        << osc::EndMessage
-        << osc::EndBundle;
-    sendOsc(ops.Data(), ops.Size());
+    if(sendPort_!=0) {
+        osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+        ops << osc::BeginBundleImmediate
+            << osc::BeginMessage("/nui/button")
+            << (int32_t) id
+            << (int32_t) value
+            << osc::EndMessage
+            << osc::EndBundle;
+        sendOsc(ops.Data(), ops.Size());
+    }
 }
 
 void SKApp::onEncoder(unsigned id, int value) {
-    osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
-    ops << osc::BeginBundleImmediate
-        << osc::BeginMessage("/nui/encoder")
-        << (int32_t) id
-        << (int32_t) value
-        << osc::EndMessage
-        << osc::EndBundle;
-    sendOsc(ops.Data(), ops.Size());
+    if(sendPort_!=0) {
+        osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
+        ops << osc::BeginBundleImmediate
+            << osc::BeginMessage("/nui/encoder")
+            << (int32_t) id
+            << (int32_t) value
+            << osc::EndMessage
+            << osc::EndBundle;
+        sendOsc(ops.Data(), ops.Size());
+    }
 
     if (!sidekickActive_) return;
 
@@ -706,6 +710,8 @@ void *osc_proc(void *aThis) {
 }
 
 void SKApp::processOsc() {
+    if(listenPort_==0) return ; // no osc input
+
     oscListenSocket_.reset(
         new UdpListeningReceiveSocket(
             IpEndpointName(IpEndpointName::ANY_ADDRESS, listenPort_),
@@ -724,6 +730,8 @@ void *osc_write_proc(void *aThis) {
 static constexpr unsigned OSC_WRITE_POLL_WAIT_TIMEOUT = 1000;
 
 void SKApp::processOscWrite() {
+    if(sendPort_==0) return; // no sending of osc
+
     oscWriteSocket_ = std::shared_ptr<UdpTransmitSocket>(new UdpTransmitSocket(IpEndpointName(sendAddr_.c_str(), sendPort_)));
     while (keepRunning_) {
         OscMsg msg;
@@ -742,6 +750,7 @@ void SKApp::startOscServer() {
 }
 
 void SKApp::sendSKOscEvent(const std::string &event, const std::string data) {
+    if(sendPort_==0) return;
     osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
     std::string addr = std::string("/sk/") + event;
     ops << osc::BeginBundleImmediate
@@ -757,6 +766,7 @@ void SKApp::sendSKOscEvent(const std::string &event, const std::string data) {
 }
 
 void SKApp::sendDeviceInfo() {
+    if(sendPort_==0) return;
     osc::OutboundPacketStream ops(osc_write_buffer_, OSC_OUTPUT_BUFFER_SIZE);
     ops << osc::BeginBundleImmediate;
     
@@ -773,6 +783,7 @@ void SKApp::sendDeviceInfo() {
 }
 
 void SKApp::sendOsc(const char *data, unsigned size) {
+    if(sendPort_==0) return;
     OscMsg msg;
     msg.size_ = (size > OscMsg::MAX_OSC_MESSAGE_SIZE ? OscMsg::MAX_OSC_MESSAGE_SIZE : size);
     memcpy(msg.buffer_, data, (size_t) msg.size_);
