@@ -31,7 +31,7 @@ send : /live/connect(host,port) - connect to Norns, and proxy Norns messages to 
 
 */
 
-~skDisplay = NetAddr(~nornsip.asString, 3001); // sidekick
+~skDisplay = NetAddr("127.0.0.1", 3001); // sidekick
 
 
 s.waitForBoot{
@@ -54,6 +54,10 @@ OSCdef( \liveConnect, {
 	arg msg, time, addr, recvPort;
 	'connect->'.post;msg[1].post; ' '.post;msg[2].postln;
 	~remote = NetAddr(msg[1].asString, msg[2]); // remote server
+	~skDisplay.sendMsg("/nui/displayClear");
+	~skDisplay.sendMsg("/nui/textLine",15,0,0, "client connected");
+	~skDisplay.sendMsg("/nui/textLine",5,1,0, msg[1].asString ++ ":" ++ msg[2].asString);
+	~skDisplay.sendMsg("/nui/displayPaint");
 }
 ,
 '/live/connect',
@@ -63,7 +67,10 @@ recvPort:~rPort
 OSCdef( \liveFiles, {
 	arg msg, time, addr, recvPort;
 	'files->'.post;msg[1].post; ' '.post;msg[2].postln;
-	SoundFile.collect(msg[2]).do { |f| ~remote.sendMsg(msg[1],f.path); };
+	SoundFile.collect(msg[2].asString).do { |f| f.path.postln; };
+    if (~remote != nil) {
+	    SoundFile.collect(msg[2].asString).do { |f| ~remote.sendMsg(msg[1],f.path); };
+    }
 }
 ,
 '/live/files',
@@ -81,7 +88,7 @@ OSCdef( \osc_button, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.s
 
 OSCdef( \osc_numencoders, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sendMsg(msg[0],msg[1]) }} ,
 '/nui/numencoders',recvPort:~rPort);
-OSCdef( \osc_size, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sendMsg(msg[0],msg[1]) }} ,
+OSCdef( \osc_numbuttons, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sendMsg(msg[0],msg[1]) }} ,
 '/nui/numbuttons',recvPort:~rPort);
 
 )
