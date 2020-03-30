@@ -596,7 +596,8 @@ void SKApp::loadMenu(const std::string &dir, bool sys) {
                         auto menuItem = std::make_shared<MenuItem>(fname, sys ? MenuItem::System : MenuItem::ShellPatch, sys);
                         mainMenu_.push_back(menuItem);
                     } else {
-                        bool ignore = checkFileExists(patchlocation + "/ignore.txt");
+                        bool ignore = std::string("__MACOSX")==std::string(fname) || 
+                                    checkFileExists(patchlocation + "/ignore.txt");
                         if (!ignore) {
                             auto menuItem = std::make_shared<MenuItem>(fname, MenuItem::Dir, sys);
                             mainMenu_.push_back(menuItem);
