@@ -31,16 +31,15 @@ send : /live/connect(host,port) - connect to Norns, and proxy Norns messages to 
 
 */
 
-~skDisplay = NetAddr("127.0.0.1", 3001); // sidekick
+~sidekick = NetAddr("127.0.0.1", 3001); // sidekick
 
 
 s.waitForBoot{
-	"Server Booted".postln;
 	"Live Coding patch".postln;
 	s.sync;
-	~skDisplay.sendMsg("/nui/displayClear");
-	~skDisplay.sendMsg("/nui/textLine",15,0,0,"Live coding enabled");
-	~skDisplay.sendMsg("/nui/displayPaint");
+	~sidekick.sendMsg("/nui/displayClear");
+	~sidekick.sendMsg("/nui/textLine",15,0,0,"Live coding enabled");
+	~sidekick.sendMsg("/nui/displayPaint");
 };
 
 
@@ -54,10 +53,10 @@ OSCdef( \liveConnect, {
 	arg msg, time, addr, recvPort;
 	'connect->'.post;msg[1].post; ' '.post;msg[2].postln;
 	~remote = NetAddr(msg[1].asString, msg[2]); // remote server
-	~skDisplay.sendMsg("/nui/displayClear");
-	~skDisplay.sendMsg("/nui/textLine",15,0,0, "client connected");
-	~skDisplay.sendMsg("/nui/textLine",5,1,0, msg[1].asString ++ ":" ++ msg[2].asString);
-	~skDisplay.sendMsg("/nui/displayPaint");
+	~sidekick.sendMsg("/nui/displayClear");
+	~sidekick.sendMsg("/nui/textLine",15,0,0, "client connected");
+	~sidekick.sendMsg("/nui/textLine",5,1,0, msg[1].asString ++ ":" ++ msg[2].asString);
+	~sidekick.sendMsg("/nui/displayPaint");
 }
 ,
 '/live/connect',
@@ -80,7 +79,7 @@ recvPort:~rPort
 
 
 
-//neb messages to forward to remote client
+//norns messages to forward to remote client
 OSCdef( \osc_encoder, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sendMsg(msg[0],msg[1],msg[2]) }} ,
 '/nui/encoder',recvPort:~rPort);
 OSCdef( \osc_button, { |msg, time, addr, recvPort|if(~remote != nil) { ~remote.sendMsg(msg[0],msg[1],msg[2]) }} ,
@@ -93,7 +92,7 @@ OSCdef( \osc_numbuttons, { |msg, time, addr, recvPort|if(~remote != nil) { ~remo
 
 )
 
-
+//================================== EXAMPLE REMOTE CLIENT ==============================================
 
 /*
 // EXAMPLE PATCH USED ON REMOTE CLIENT
@@ -109,12 +108,12 @@ s.startAliveThread;
 ~localip = '192.168.1.18';
 ~rPort=3000;
 
-~skDisplay = NetAddr(~nornsip.asString, 3001); // sidekick
+~sidekick = NetAddr(~nornsip.asString, 3001); // sidekick
 
 
 // on connection we will get a list of audio files on the Norns
 ~audio_files = List.new;
-OSCdef(\live\audiofile,
+OSCdef(\liveaudiofile,
 	{
 		arg msg, time, addr, recvPort;
 		msg[1].postln;
@@ -127,8 +126,10 @@ OSCdef(\live\audiofile,
 //connect to live patch, and ask for redirection
 m = NetAddr(~nornsip.asString, ~rPort);
 m.sendMsg("/live/connect",~localip,~rPort);
-m.sendMsg("/live/files","\live\audiofile", "/home/we/dust/audio/common/waves/");
+m.sendMsg("/live/files","/live/audiofile", "/home/we/dust/audio/common/waves/*.wav");
+~audio_files.postln;
 
+~sidekick.sendMsg("/sk/deviceInfo");
 
 // note from here on, the patch would be the same as run on the Norns
 
@@ -138,8 +139,8 @@ m.sendMsg("/live/files","\live\audiofile", "/home/we/dust/audio/common/waves/");
 OSCdef( \osc_encoder, {
 	arg msg, time, addr, recvPort;
     'remote->'.post;msg[0].post;msg[1].postln;
-	~skDisplay.sendMsg("/nui/textLine",15,2,0,"test");
-	~skDisplay.sendMsg("/nui/displayPaint");
+	~sidekick.sendMsg("/nui/textLine",15,2,0,"test");
+	~sidekick.sendMsg("/nui/displayPaint");
 },
 '/nui/encoder',recvPort:~rPort);
 
@@ -147,11 +148,28 @@ OSCdef( \osc_button, {
 	arg msg, time, addr, recvPort;
     'remote->'.post;msg[0].post;msg[1].postln;
 	if(msg[1]==0 && msg[2]==1) {
-		~skDisplay.sendMsg("/nui/displayClear");
-		~skDisplay.sendMsg("/nui/displayPaint");
+		~sidekick.sendMsg("/nui/displayClear");
+		~sidekick.sendMsg("/nui/displayPaint");
 	}
 },
 '/nui/button',recvPort:~rPort);
+
+
+OSCdef( \osc_numencoders, {
+	arg msg, time, addr, recvPort;
+    'remote->'.post;msg.postln;
+},
+'/nui/numencoders',
+recvPort:~rPort
+);
+
+OSCdef( \osc_numbuttons, {
+	arg msg, time, addr, recvPort;
+    'remote->'.post;msg.postln;
+},
+'/nui/numbuttons',
+recvPort:~rPort
+);
 
 // what audio files are there?
 ~audio_files.do { |f| f.postln;};
@@ -159,7 +177,6 @@ OSCdef( \osc_button, {
 // note:
 // SoundFile.collect won't work, see this is run client side...
 // Buffer.read, expects a server file ... so something like Buffer.read(~audio_files[0]);
-
 
 */
 

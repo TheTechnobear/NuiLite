@@ -4,11 +4,19 @@
 ~audio_bufs = List.new;
 ~dict = Dictionary.new;
 
-s.waitForBoot{
-	"Server Booted".postln;
-	"GrainBuf patch".postln;
+~density=10;
+~amp=0.5;
+~rate=1.0;
+~pos=0;
+~sidekick = NetAddr("127.0.0.1", 3001); // sidekick
 
-	~path="/home/we/audio/*";~audio_files= List.new;
+s.waitForBoot{
+	"GrainBuf patch".postln;
+	~sidekick.sendMsg("/nui/displayClear");
+	~sidekick.sendMsg("/nui/textLine",15,0,0,"GrainBuf Patch");
+	~sidekick.sendMsg("/nui/displayPaint");
+
+	~path="/home/we/dust/audio/common/waves/*.wav";~audio_files= List.new;
 	SoundFile.collect(~path).do { |f| ~audio_files.add(f.path);};
 	~audio_files.do { | f| ~audio_bufs.add(Buffer.readChannel(s,f,channels:[0]))};
 
@@ -47,10 +55,70 @@ s.waitForBoot{
 
 	s.sync;
 	2.wait;
-	
-        ~dict.add(\nbuf -> 0);
-        ~dict.add(\sndbuf -> ~audio_bufs[0]);
+
+    ~dict.add(\density -> ~density);
+    ~dict.add(\amp -> ~amp);
+    ~dict.add(\pos -> ~pos);
+    ~dict.add(\rate -> ~rate);
+    ~dict.add(\nbuf -> 0);
+    ~dict.add(\sndbuf -> ~audio_bufs[0]);
 	~dict.postln;
 	~synth = Synth(\sdGrainBuf,~dict.asPairs);
 };
 
+
+(
+OSCdef( \osc_encoder, {
+    arg msg, time, addr, recvPort;
+	switch(msg[1],
+		0,{
+			~density = ~density + (msg[2] * 10);
+			~synth.set(\density, ~density);
+			~sidekick.sendMsg("/nui/clearLine",0,1);
+			~sidekick.sendMsg("/nui/textLine",15,1,0,"Density " ++ ~density.asString);
+			~sidekick.sendMsg("/nui/displayPaint");
+		},
+		1,{
+			~amp = ~amp + (msg[2] * 0.1);
+			~synth.set(\amp, ~amp);
+			~sidekick.sendMsg("/nui/clearLine",0,2);
+			~sidekick.sendMsg("/nui/textLine",15,2,0,"Amp " ++ ~amp.asString);
+			~sidekick.sendMsg("/nui/displayPaint");
+		},
+		2,{
+			~pos = ~pos + (msg[2] * 0.1);
+			~synth.set(\pos, ~pos);
+			~sidekick.sendMsg("/nui/clearLine",0,3);
+			~sidekick.sendMsg("/nui/textLine",15,3,0,"Position " ++ ~pos.asString);
+			~sidekick.sendMsg("/nui/displayPaint");
+		},
+		3,{
+			~rate = ~rate + (msg[2] * 0.1);
+			~synth.set(\rate, ~rate);
+			~sidekick.sendMsg("/nui/clearLine",0,4);
+			~sidekick.sendMsg("/nui/textLine",15,4,0,"Rate " ++ ~rate.asString);
+			~sidekick.sendMsg("/nui/displayPaint");
+		}
+	)
+
+},
+"/nui/encoder",
+recvPort:3000
+);
+
+OSCdef( \osc_button, {
+    arg msg, time, addr, recvPort;
+	switch(msg[1],
+		0,{
+		},
+		1,{
+		},
+		2,{
+		},
+	)
+
+},
+"/nui/button",
+recvPort:3000
+);
+)
