@@ -713,12 +713,18 @@ void *osc_proc(void *aThis) {
 void SKApp::processOsc() {
     if(listenPort_==0) return ; // no osc input
 
-    oscListenSocket_.reset(
-        new UdpListeningReceiveSocket(
-            IpEndpointName(IpEndpointName::ANY_ADDRESS, listenPort_),
-            oscListener_.get())
-    );
-    oscListenSocket_->Run();
+    try {
+        oscListenSocket_.reset(
+            new UdpListeningReceiveSocket(
+                IpEndpointName(IpEndpointName::ANY_ADDRESS, listenPort_),
+                oscListener_.get())
+        );
+        oscListenSocket_->Run();
+    } catch (const std::runtime_error& e) {
+        std::cerr << "error opening listen socket on " << listenPort_ << std::endl;
+        std::cerr << "continue with OSC input disabled" << std::endl;
+        listenPort_=0;
+    }
 }
 
 void *osc_write_proc(void *aThis) {
@@ -733,12 +739,18 @@ static constexpr unsigned OSC_WRITE_POLL_WAIT_TIMEOUT = 1000;
 void SKApp::processOscWrite() {
     if(sendPort_==0) return; // no sending of osc
 
-    oscWriteSocket_ = std::shared_ptr<UdpTransmitSocket>(new UdpTransmitSocket(IpEndpointName(sendAddr_.c_str(), sendPort_)));
-    while (keepRunning_) {
-        OscMsg msg;
-        if (writeMessageQueue_.wait_dequeue_timed(msg, std::chrono::milliseconds(OSC_WRITE_POLL_WAIT_TIMEOUT))) {
-            oscWriteSocket_->Send(msg.buffer_, (size_t) msg.size_);
+    try {
+        oscWriteSocket_ = std::shared_ptr<UdpTransmitSocket>(new UdpTransmitSocket(IpEndpointName(sendAddr_.c_str(), sendPort_)));
+        while (keepRunning_) {
+            OscMsg msg;
+            if (writeMessageQueue_.wait_dequeue_timed(msg, std::chrono::milliseconds(OSC_WRITE_POLL_WAIT_TIMEOUT))) {
+                oscWriteSocket_->Send(msg.buffer_, (size_t) msg.size_);
+            }
         }
+    } catch (const std::runtime_error& e) {
+        std::cerr << "error wtih  transmit socket on << " << sendPort_ << std::endl;
+        std::cerr << "continue with OSC output disabled" << std::endl;
+        sendPort_=0;
     }
 }
 
