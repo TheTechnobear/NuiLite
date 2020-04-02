@@ -86,7 +86,23 @@ void SKOscCallback::ProcessMessage(const osc::ReceivedMessage &m,
             unsigned clr = getUnsignedArg(arg);
             unsigned x = getUnsignedArg(arg);
             unsigned y = getUnsignedArg(arg);
-            const char *str = (arg++)->AsString();
+            std::string str;
+            char buf[128];
+            while (arg != m.ArgumentsEnd()) {
+                if (arg->IsString()) {
+                    const char *v = (arg)->AsString();
+                    str = str + v + " ";
+                } else if (arg->IsInt32()) {
+                    int v = (arg)->AsInt32();
+                    sprintf(buf, "%d ", v);
+                    str = str + buf;
+                } else if (arg->IsFloat()) {
+                    float v = (arg)->AsFloat();
+                    sprintf(buf, "%g ", v);
+                    str = str + buf;
+                }
+                arg++;
+            }
             app_.device().gText(clr, x, y, str);
         } else if (addr == "/nui/gWaveform") {
             std::vector<unsigned> wave;
@@ -95,9 +111,9 @@ void SKOscCallback::ProcessMessage(const osc::ReceivedMessage &m,
             if (arg->IsBlob()) {
                 const void *blob;
                 osc::osc_bundle_element_size_t size;
-                (arg++)->AsBlob( blob, size);
+                (arg++)->AsBlob(blob, size);
                 for (int i = 0; i < size; i++) {
-                    const uint8_t* values=static_cast<const uint8_t *>(blob);
+                    const uint8_t *values = static_cast<const uint8_t *>(blob);
                     wave.push_back(values[i]);
                 }
             }
@@ -120,7 +136,23 @@ void SKOscCallback::ProcessMessage(const osc::ReceivedMessage &m,
             unsigned clr = getUnsignedArg(arg);
             unsigned line = getUnsignedArg(arg);
             unsigned col = getUnsignedArg(arg);
-            const char *str = (arg++)->AsString();
+            std::string str;
+            char buf[128];
+            while (arg != m.ArgumentsEnd()) {
+                if (arg->IsString()) {
+                    const char *v = (arg)->AsString();
+                    str = str + v + " ";
+                } else if (arg->IsInt32()) {
+                    int v = (arg)->AsInt32();
+                    sprintf(buf, "%d ", v);
+                    str = str + buf;
+                } else if (arg->IsFloat()) {
+                    float v = (arg)->AsFloat();
+                    sprintf(buf, "%g ", v);
+                    str = str + buf;
+                }
+                arg++;
+            }
             app_.device().textLine(clr, line, col, str);
         } else if (addr == "/nui/invertLine") {
             osc::ReceivedMessage::const_iterator arg = m.ArgumentsBegin();
