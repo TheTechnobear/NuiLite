@@ -719,6 +719,7 @@ void SKApp::processOsc() {
                 IpEndpointName(IpEndpointName::ANY_ADDRESS, listenPort_),
                 oscListener_.get())
         );
+        oscListenSocket_->SetAllowReuse(true);
         oscListenSocket_->Run();
     } catch (const std::runtime_error& e) {
         std::cerr << "error opening listen socket on " << listenPort_ << std::endl;
