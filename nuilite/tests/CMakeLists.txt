@@ -1,7 +1,7 @@
 # basic testapp
 
-find_path(LIBCAIRO_INC NAME cairo.h PATHS /usr/include/cairo /usr/local/include/cairo)
-find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib)
+find_path(LIBCAIRO_INC NAME cairo.h PATHS /usr/include/cairo /usr/local/include/cairo /opt/homebrew/include/cairo)
+find_library(LIBCAIRO NAME cairo PATHS /usr/local/lib /usr/lib /opt/homebrew/lib)
 
 include_directories (
         "${PROJECT_SOURCE_DIR}/.."
